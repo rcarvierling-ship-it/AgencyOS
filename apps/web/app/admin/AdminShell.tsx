@@ -3,7 +3,7 @@ import styles from './AdminShell.module.css'
 import { requireUser, type AdminRole } from '../../lib/admin-auth'
 
 export const adminNav = [
-  ['Overview', '/admin', 'home'], ['Businesses', '/admin/businesses', 'building'], ['Pipeline', '/admin/pipeline', 'chart-bar'], ['Demos', '/admin/demos', 'desktop'], ['Outreach', '/admin/outreach', 'message'], ['Clients', '/admin/clients', 'users-alt'], ['Projects', '/admin/projects', 'folder'], ['Websites', '/admin/websites', 'globe'], ['Hosting', '/admin/hosting', 'server'], ['AI Operations', '/admin/ai', 'robot'], ['Analytics', '/admin/analytics', 'analytics'], ['Settings', '/admin/settings', 'setting'], ['Team & Access', '/admin/team', 'users-alt'],
+  ['Overview', '/admin', 'home'], ['Inquiries', '/admin/inquiries', 'envelope'], ['Businesses', '/admin/businesses', 'building'], ['Pipeline', '/admin/pipeline', 'chart-bar'], ['Demos', '/admin/demos', 'desktop'], ['Outreach', '/admin/outreach', 'message'], ['Clients', '/admin/clients', 'users-alt'], ['Projects', '/admin/projects', 'folder'], ['Websites', '/admin/websites', 'globe'], ['Hosting', '/admin/hosting', 'server'], ['AI Operations', '/admin/ai', 'robot'], ['Analytics', '/admin/analytics', 'analytics'], ['Settings', '/admin/settings', 'setting'], ['Team & Access', '/admin/team', 'users-alt'],
 ] as const
 function Icon({name,size=16}:{name:string;size?:number}){return <i aria-hidden="true" className={`uil uil-${name}`} style={{fontSize:size}}/>}
 function RcvLogo({size=34}:{size?:number}){return <span className={styles.rcvLogo} style={{width:size,height:size}} aria-hidden="true"><span>R</span></span>}
