@@ -5,6 +5,19 @@ const timestamps = {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 };
 
+export const agencySettings = pgTable("agency_settings", {
+  id: text("id").primaryKey().default("default"),
+  agencyName: text("agency_name").notNull().default("RCV Agency"),
+  websiteUrl: text("website_url"),
+  timezone: text("timezone").notNull().default("America/New_York"),
+  currency: text("currency").notNull().default("USD"),
+  defaultPipelineStage: text("default_pipeline_stage").notNull().default("discovered"),
+  defaultOpportunityValueCents: integer("default_opportunity_value_cents").notNull().default(250000),
+  defaultOpportunityProbability: integer("default_opportunity_probability").notNull().default(50),
+  notifications: jsonb("notifications").notNull().default({}),
+  ...timestamps,
+});
+
 export const businesses = pgTable("businesses", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
