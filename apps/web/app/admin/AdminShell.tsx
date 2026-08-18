@@ -20,11 +20,15 @@ function Icon({ name, size = 16 }: { name: string; size?: number }) {
   return <i aria-hidden="true" className={`uil uil-${name}`} style={{ fontSize: size }} />
 }
 
+function RcvLogo({ size = 34 }: { size?: number }) {
+  return <span className={styles.rcvLogo} style={{ width: size, height: size }} aria-hidden="true"><span>R</span></span>
+}
+
 export function AdminShell({ children, active = 'Overview', title, subtitle, action }: { children: React.ReactNode; active?: string; title?: string; subtitle?: string; action?: React.ReactNode }) {
   return <div className={`${styles.app} agencyAdmin`}>
     <aside className={styles.sidebar}>
-      <div className={styles.brand}><span className={styles.mark}>R</span><span>RCV <small>AGENCY</small></span></div>
-      <div className={styles.workspace}><span className={styles.avatar}>RV</span><div><b>AgencyOS</b><span>Command Center</span></div><Icon name="angle-down" size={12} /></div>
+      <div className={styles.brand}><RcvLogo size={32} /><span>RCV <small>AGENCY</small></span></div>
+      <div className={styles.workspace}><RcvLogo size={28} /><div><b>AgencyOS</b><span>Command Center</span></div><Icon name="angle-down" size={12} /></div>
       <div className={styles.label}>Workspace</div>
       <nav>{adminNav.slice(0, 9).map(([name, href, icon]) => <Link className={name === active ? styles.active : ''} href={href} key={name}><span className={styles.navIcon}><Icon name={icon} /></span>{name}</Link>)}</nav>
       <div className={styles.label}>Intelligence</div>
