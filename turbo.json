@@ -1,12 +1,26 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["DATABASE_URL", "ADMIN_AUTH_SECRET", "ADMIN_PASSWORD"],
+  "globalEnv": [
+    "DATABASE_URL",
+    "ADMIN_AUTH_SECRET",
+    "ADMIN_PASSWORD",
+    "VERCEL",
+    "GITHUB_TOKEN",
+    "CLOUDFLARE_API_TOKEN"
+  ],
   "tasks": {
     "dev": { "cache": false, "persistent": true },
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["DATABASE_URL", "ADMIN_AUTH_SECRET", "ADMIN_PASSWORD"]
+      "env": [
+        "DATABASE_URL",
+        "ADMIN_AUTH_SECRET",
+        "ADMIN_PASSWORD",
+        "VERCEL",
+        "GITHUB_TOKEN",
+        "CLOUDFLARE_API_TOKEN"
+      ]
     },
     "lint": {},
     "typecheck": { "dependsOn": ["^typecheck"] }
