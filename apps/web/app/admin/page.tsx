@@ -1,5 +1,21 @@
 import Link from 'next/link'
-import { AdminShell, Card, Pill, Stat } from './AdminShell'
-const pipeline=[['Discovered',18,'#a8a8a0'],['Qualified',11,'#7b8cff'],['Researching',7,'#8b7cf6'],['Demo Ready',5,'#a78bfa'],['Contacted',12,'#5b8def'],['Interested',4,'#38a5d9'],['Proposal',2,'#39a77a'],['Won',1,'#22a06b']]
-const businesses=[['Harrison & Sons HVAC','Indianapolis, IN','Demo Ready','91','Review demo','harrison-sons-hvac'],['Summit Roofing Co.','Fishers, IN','Researching','84','Finish research','summit-roofing'],['Blue Oak Landscaping','Carmel, IN','Contacted','78','Follow up','blue-oak-landscaping'],['Precision Auto Care','Greenwood, IN','Interested','88','Open conversation','precision-auto-care'],['Evergreen Plumbing','Noblesville, IN','Discovered','73','Qualify lead','evergreen-plumbing']]
-export default function Admin(){return <AdminShell title="Good evening, Reese." subtitle="Everything across your agency, in one place."><div className="stats"><Stat label="Businesses" value="2,841" delta="12.4%"/><Stat label="Active opportunities" value="184" delta="8.7%"/><Stat label="Demos ready" value="37" delta="16.2%"/><Stat label="Monthly recurring revenue" value="$8.4k" delta="21.5%"/></div><Card eyebrow="Pipeline" title="Opportunity flow" href="/admin/pipeline"><div className="pipeline">{pipeline.map(([name,count,color])=><Link className="stage" href={`/admin/pipeline?stage=${encodeURIComponent(name)}`} key={name}><div className="stageHead"><span>{name}</span><b>{count}</b></div><div className="stageCount">{count}</div><div className="bar"><i style={{width:`${Math.min(100,Number(count)*5)}%`,background:color}}/></div></Link>)}</div></Card><Card eyebrow="Priority queue" title="Businesses to work" href="/admin/businesses"><table className="table"><thead><tr><th>Business</th><th>Status</th><th>Opportunity</th><th>Next action</th></tr></thead><tbody>{businesses.map(([name,loc,status,score,next,slug])=><tr key={name}><td><Link href={`/admin/businesses/${slug}`}>{name}</Link><div className="muted">{loc}</div></td><td><Pill tone={status==='Interested'?'green':status==='Demo Ready'?'blue':'neutral'}>{status}</Pill></td><td><b>{score}/100</b></td><td>{next}</td></tr>)}</tbody></table></Card></AdminShell>}
+import { AdminShell, Card, Pill, Stat, EmptyState } from './AdminShell'
+import { getCounts, getPipeline, getBusinesses } from './data'
+
+export default async function Admin() {
+  const [counts, pipeline, businesses] = await Promise.all([getCounts(), getPipeline(), getBusinesses(5)])
+  return <AdminShell title="Command Center" subtitle="Your agency, powered by live business data.">
+    <div className="stats">
+      <Stat label="Businesses" value={String(counts.businesses)} />
+      <Stat label="Active opportunities" value={String(counts.opportunities)} />
+      <Stat label="Demos ready" value={String(counts.demos_ready)} />
+      <Stat label="Clients" value={String(counts.clients)} />
+    </div>
+    <Card eyebrow="Pipeline" title="Opportunity flow" href="/admin/pipeline">
+      {pipeline.length ? <div className="pipeline">{pipeline.map((stage:any)=><Link className="stage" href={`/admin/pipeline?stage=${encodeURIComponent(stage.stage)}`} key={stage.stage}><div className="stageHead"><span>{stage.stage.replaceAll('_',' ')}</span><b>{stage.count}</b></div><div className="stageCount">{stage.count}</div><div className="bar"><i style={{width:`${Math.min(100, Number(stage.count)*5)}%`}} /></div></Link>)}</div> : <EmptyState title="No opportunities yet" body="Run lead discovery to populate your pipeline with real businesses." href="/admin/discovery" label="Open discovery" />}
+    </Card>
+    <Card eyebrow="Priority queue" title="Businesses to work" href="/admin/businesses">
+      {businesses.length ? <table className="table"><thead><tr><th>Business</th><th>Status</th><th>Opportunity</th><th>Location</th></tr></thead><tbody>{businesses.map(b=><tr key={b.id}><td><Link href={`/admin/businesses/${b.slug}`}>{b.name}</Link></td><td><Pill>{b.status}</Pill></td><td><b>{b.opportunityScore ?? '—'}{b.opportunityScore !== null ? '/100':''}</b></td><td>{[b.city,b.state].filter(Boolean).join(', ') || '—'}</td></tr>)}</tbody></table> : <EmptyState title="No businesses yet" body="Your dashboard will populate as soon as real businesses are added." href="/admin/discovery" label="Find businesses" />}
+    </Card>
+  </AdminShell>
+}
