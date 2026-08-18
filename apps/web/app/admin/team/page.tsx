@@ -1,6 +1,5 @@
-import { AdminShell, Card, Pill, roleLabels } from '../AdminShell'
-import { requireUser } from '../../../lib/admin-auth'
-import { listUsers } from '../../../lib/admin-auth'
+import { AdminShell, Card, Pill } from '../AdminShell'
+import { requireUser, listUsers } from '../../../lib/admin-auth'
 import { TeamManager } from './TeamManager'
 
 export const dynamic = 'force-dynamic'
