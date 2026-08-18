@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+:root { --bg: #07090d; --panel: #0d1118; --text: #f4f7fb; --muted: #929aaa; --line: rgba(255,255,255,.09); --accent: #7c8cff; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: Arial, Helvetica, sans-serif; }
+::selection { background: rgba(124,140,255,.35); }
