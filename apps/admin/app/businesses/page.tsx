@@ -1,0 +1,11 @@
+const businesses = [
+  { slug: "harrison-sons-hvac", name: "Harrison & Sons HVAC", location: "Indianapolis, IN", industry: "HVAC", status: "Demo Ready", score: 91, website: "harrisonsons.com" },
+  { slug: "summit-roofing-co", name: "Summit Roofing Co.", location: "Fishers, IN", industry: "Roofing", status: "Researching", score: 84, website: "summitroofingco.com" },
+  { slug: "blue-oak-landscaping", name: "Blue Oak Landscaping", location: "Carmel, IN", industry: "Landscaping", status: "Contacted", score: 78, website: "blueoaklandscaping.com" },
+  { slug: "precision-auto-care", name: "Precision Auto Care", location: "Greenwood, IN", industry: "Auto Repair", status: "Interested", score: 88, website: "precisionautocare.com" },
+  { slug: "evergreen-plumbing", name: "Evergreen Plumbing", location: "Noblesville, IN", industry: "Plumbing", status: "Discovered", score: 73, website: "evergreenplumbing.com" },
+];
+
+export default function BusinessesPage() {
+  return <div className="shell"><aside className="side"><div className="brand">RCV Agency</div><nav className="nav"><a href="/">Overview</a><a className="active" href="/businesses">Businesses</a><a href="/pipeline">Pipeline</a><a href="/demos">Demos</a><a href="/outreach">Outreach</a><a href="/clients">Clients</a><a href="/projects">Projects</a><a href="/websites">Websites</a><a href="/hosting">Hosting</a><a href="/ai">AI Operations</a><a href="/analytics">Analytics</a><a href="/settings">Settings</a></nav></aside><main className="main"><header className="top"><div><div className="kicker">Business Graph</div><h1 className="title">Businesses</h1><div className="muted">Every business is a permanent record. Opportunities and projects attach to it.</div></div><span className="pill">{businesses.length} sample records</span></header><section className="panel">{businesses.map((business) => <a className="row" style={{textDecoration:"none",color:"inherit"}} href={`/businesses/${business.slug}`} key={business.slug}><div><strong>{business.name}</strong><br/><small>{business.location}</small></div><div><small>{business.industry}</small><br/>{business.website}</div><div><span className="pill">{business.status}</span></div><div><small>Opportunity</small><br/><span className="score">{business.score}/100</span></div></a>)}</section></main></div>;
+}
