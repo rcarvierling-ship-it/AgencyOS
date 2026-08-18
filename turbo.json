@@ -1,8 +1,13 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["DATABASE_URL", "ADMIN_AUTH_SECRET", "ADMIN_PASSWORD"],
   "tasks": {
     "dev": { "cache": false, "persistent": true },
-    "build": { "dependsOn": ["^build"], "outputs": [".next/**", "!.next/cache/**"] },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": ["DATABASE_URL", "ADMIN_AUTH_SECRET", "ADMIN_PASSWORD"]
+    },
     "lint": {},
     "typecheck": { "dependsOn": ["^typecheck"] }
   }
