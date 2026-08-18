@@ -1,31 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
+import { authenticate, sessionCookie } from '../../../../../../lib/admin-auth'
 
-const COOKIE = 'agencyos_admin';
-
-async function sign(value: string, secret: string) {
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(value));
-  return `${value}.${Buffer.from(signature).toString('base64url')}`;
-}
+export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null) as { password?: string } | null;
-  const password = body?.password ?? '';
-  const expected = process.env.ADMIN_PASSWORD;
-  const secret = process.env.ADMIN_AUTH_SECRET;
+  try {
+    const body = await request.json().catch(() => null) as { email?: string; password?: string } | null
+    const email = String(body?.email || '').trim()
+    const password = String(body?.password || '')
+    if (!email || !password) return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
 
-  if (!expected || !secret || password !== expected) {
-    return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+    const result = await authenticate(email, password)
+    if (!result) return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+
+    const response = NextResponse.json({ ok: true, user: result.user })
+    response.cookies.set(sessionCookie(result.token))
+    return response
+  } catch (error) {
+    console.error('AgencyOS login failed', error)
+    return NextResponse.json({ error: 'Unable to sign in right now' }, { status: 500 })
   }
-
-  const token = await sign('authenticated', secret);
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set(COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7,
-  });
-  return response;
 }
