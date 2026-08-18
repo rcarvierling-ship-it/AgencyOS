@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { authenticate, sessionCookie } from '../../../../../../lib/admin-auth'
+import { authenticate, sessionCookie } from '../../../../lib/admin-auth'
 
 export const runtime = 'nodejs'
 
