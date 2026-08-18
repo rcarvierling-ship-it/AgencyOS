@@ -30,3 +30,7 @@ Next.js, TypeScript, Tailwind CSS, Drizzle ORM, PostgreSQL, Zod, pnpm workspaces
 ## Product rule
 
 A **Business** is permanent. A **Lead/Opportunity** is temporary. A **Client** is a business that purchased. Never delete a business merely because an opportunity is lost.
+
+## Deployment
+
+Production is deployed from the `main` branch through Vercel.
