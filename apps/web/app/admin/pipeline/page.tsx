@@ -1,13 +1,18 @@
-import Link from 'next/link'
-import { AdminShell, EmptyState, Pill } from '../AdminShell'
+import { AdminShell } from '../AdminShell'
 import { getPipeline } from '../data'
+import PipelineBoard from './PipelineBoard'
 
-const order = ['discovered','qualified','researching','demo_ready','contacted','interested','proposal','won']
 export default async function Pipeline() {
   const rows = await getPipeline()
-  const byStage = new Map(rows.map((r:any) => [r.stage, r]))
-  const hasData = rows.length > 0
+  const items = rows.flatMap((row: any) => (row.businesses ?? []).map((business: any) => ({
+    id: business.opportunityId,
+    name: business.name,
+    slug: business.slug,
+    score: business.score ?? null,
+    stage: row.stage,
+  }))).filter((item: any) => item.id)
+
   return <AdminShell active="Pipeline" title="Pipeline" subtitle="Your real opportunities, from discovery through close.">
-    <div className="card"><div className="filters"><span className="filter">Live database</span><span className="filter">All stages</span></div>{hasData ? <div className="pipeline">{order.map(stage => { const row:any = byStage.get(stage); const items = row?.businesses ?? []; return <div className="stage" key={stage}><div className="stageHead"><span>{stage.replaceAll('_',' ')}</span><b>{row?.count ?? 0}</b></div>{items.map((item:any)=><Link className="item" href={`/admin/businesses/${item.slug}`} key={item.slug}><b>{item.name}</b><span>{item.score != null ? `Opportunity ${item.score}/100` : 'No score yet'}</span></Link>)}</div> })}</div> : <EmptyState title="Pipeline is empty" body="No opportunities exist yet. Add real businesses and create opportunities to see them here." href="/admin/discovery" label="Start discovery" />}</div>
+    <div className="card"><div className="filters"><span className="filter">Live database</span><span className="filter">Drag & drop to move</span></div><PipelineBoard initial={items} /></div>
   </AdminShell>
 }
