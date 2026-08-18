@@ -1,3 +1,4 @@
+import "./pipeline.css";
 import PipelineBoard from "./PipelineBoard";
 
 export default function PipelinePage(){
