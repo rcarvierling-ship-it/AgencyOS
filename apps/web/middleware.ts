@@ -10,7 +10,7 @@ async function sign(value: string, secret: string) {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname === '/admin/login' || pathname === '/api/admin/login') return NextResponse.next();
+  if (pathname === '/admin/login' || pathname === '/api/admin/login' || pathname === '/api/admin/logout') return NextResponse.next();
 
   const secret = process.env.ADMIN_AUTH_SECRET;
   const token = request.cookies.get(COOKIE)?.value;
@@ -30,5 +30,5 @@ function redirectToLogin(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/businesses/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/businesses/:path*'],
 };
