@@ -1,0 +1,1 @@
+{"name":"@agencyos/db","private":true,"version":"0.1.0","dependencies":{"drizzle-orm":"^0.44.5","postgres":"^3.4.7"},"devDependencies":{"drizzle-kit":"^0.31.4","typescript":"^5.9.2"},"scripts":{"typecheck":"tsc --noEmit"}}
