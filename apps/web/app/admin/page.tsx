@@ -1,16 +1,20 @@
 import Link from 'next/link'
 import { AdminShell, Card, Pill, Stat, EmptyState } from './AdminShell'
-import { getCounts, getPipeline, getBusinesses } from './data'
+import { getCounts, getPipeline, getBusinesses, getInquiries } from './data'
 
 export default async function Admin() {
-  const [counts, pipeline, businesses] = await Promise.all([getCounts(), getPipeline(), getBusinesses(5)])
+  const [counts, pipeline, businesses, inquiries] = await Promise.all([getCounts(), getPipeline(), getBusinesses(5), getInquiries(4)])
   return <AdminShell title="Command Center" subtitle="Your agency, powered by live business data.">
     <div className="stats">
       <Stat label="Businesses" value={String(counts.businesses)} />
       <Stat label="Active opportunities" value={String(counts.opportunities)} />
+      <Stat label="New inquiries" value={String(counts.inquiries)} />
       <Stat label="Demos ready" value={String(counts.demos_ready)} />
       <Stat label="Clients" value={String(counts.clients)} />
     </div>
+    <Card eyebrow="Inbound" title="Website inquiries" href="/admin/inquiries">
+      {inquiries.length ? <div className="list">{inquiries.map((item:any)=><Link className="listItem" href={`/admin/businesses/${item.slug}`} key={item.id}><div><b>{item.business}</b><span>{item.metadata?.contactName ?? 'New contact'} · {item.businessEmail ?? 'No email'}</span></div><Pill tone="blue">{item.metadata?.service === 'redesign' ? 'Redesign' : item.metadata?.service === 'website-and-hosting' ? 'Website + hosting' : 'New website'}</Pill></Link>)}</div> : <EmptyState title="No inquiries yet" body="New project requests from the website will appear here automatically." href="/" label="View website" />}
+    </Card>
     <Card eyebrow="Pipeline" title="Opportunity flow" href="/admin/pipeline">
       {pipeline.length ? <div className="pipeline">{pipeline.map((stage:any)=><Link className="stage" href={`/admin/pipeline?stage=${encodeURIComponent(stage.stage)}`} key={stage.stage}><div className="stageHead"><span>{stage.stage.replaceAll('_',' ')}</span><b>{stage.count}</b></div><div className="stageCount">{stage.count}</div><div className="bar"><i style={{width:`${Math.min(100, Number(stage.count)*5)}%`}} /></div></Link>)}</div> : <EmptyState title="No opportunities yet" body="Run lead discovery to populate your pipeline with real businesses." href="/admin/discovery" label="Open discovery" />}
     </Card>
