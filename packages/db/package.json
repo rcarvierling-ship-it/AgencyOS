@@ -1,0 +1,4 @@
+{
+  "name":"@agencyos/db","private":true,"scripts":{"typecheck":"tsc --noEmit"},
+  "dependencies":{"drizzle-orm":"^0.44.5","postgres":"^3.4.7"},"devDependencies":{"drizzle-kit":"^0.31.4","typescript":"^5.9.2"}
+}
