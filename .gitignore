@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# builds
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# turbo
+.turbo/
+
+# env
+.env
+.env.local
+.env*.local
+
+# platform
+.vercel
+.DS_Store
+
+# logs
+*.log
+npm-debug.log*
+yarn-error.log*
