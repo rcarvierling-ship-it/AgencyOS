@@ -16,9 +16,48 @@ async function sha256(value:string){return hex(await crypto.subtle.digest('SHA-2
 async function hashPassword(password:string){const salt=crypto.getRandomValues(new Uint8Array(16));const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},key,256);return `v1$${hex(salt)}$${hex(bits)}`}
 async function verifyPassword(password:string,encoded:string){const [version,saltHex,expectedHex]=encoded.split('$');if(version!=='v1'||!saltHex||!expectedHex)return false;const salt=new Uint8Array(saltHex.match(/.{1,2}/g)?.map(x=>parseInt(x,16))??[]);const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},key,256);const actual=hex(bits);if(actual.length!==expectedHex.length)return false;let diff=0;for(let i=0;i<actual.length;i++)diff|=actual.charCodeAt(i)^expectedHex.charCodeAt(i);return diff===0}
 
-export async function ensureAuthTables(){const sql=db();if(!sql)throw new Error('DATABASE_URL is not configured');try{await sql`CREATE TABLE IF NOT EXISTS agency_users (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),email text NOT NULL UNIQUE,name text NOT NULL,password_hash text NOT NULL,role text NOT NULL DEFAULT 'agent' CHECK (role IN ('owner','admin','manager','operator','agent','viewer')),active boolean NOT NULL DEFAULT true,last_login_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now())`;await sql`CREATE TABLE IF NOT EXISTS agency_sessions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES agency_users(id) ON DELETE CASCADE,token_hash text NOT NULL UNIQUE,expires_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now())`;await sql`CREATE INDEX IF NOT EXISTS agency_sessions_user_id_idx ON agency_sessions(user_id)`;await sql`CREATE INDEX IF NOT EXISTS agency_sessions_expires_at_idx ON agency_sessions(expires_at)`;const [{count}]=await sql<{count:number}[]>`SELECT count(*)::int as count FROM agency_users`;if(Number(count)===0&&process.env.ADMIN_PASSWORD){const passwordHash=await hashPassword(process.env.ADMIN_PASSWORD);const email=(process.env.ADMIN_EMAIL||'owner@rcvagency.com').trim().toLowerCase();await sql`INSERT INTO agency_users (email,name,password_hash,role) VALUES (${email},'RCV Agency Owner',${passwordHash},'owner') ON CONFLICT (email) DO NOTHING`}}finally{await sql.end({timeout:2}).catch(()=>undefined)}}
+export async function ensureAuthTables(){const sql=db();if(!sql)throw new Error('DATABASE_URL is not configured');try{await sql`CREATE TABLE IF NOT EXISTS agency_users (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),email text NOT NULL UNIQUE,name text NOT NULL,password_hash text NOT NULL,role text NOT NULL DEFAULT 'agent' CHECK (role IN ('owner','admin','manager','operator','agent','viewer')),active boolean NOT NULL DEFAULT true,last_login_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now())`;await sql`CREATE TABLE IF NOT EXISTS agency_sessions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES agency_users(id) ON DELETE CASCADE,token_hash text NOT NULL UNIQUE,expires_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now())`;await sql`CREATE INDEX IF NOT EXISTS agency_sessions_user_id_idx ON agency_sessions(user_id)`;await sql`CREATE INDEX IF NOT EXISTS agency_sessions_expires_at_idx ON agency_sessions(expires_at)`;await sql`CREATE TABLE IF NOT EXISTS agency_login_attempts (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),email text NOT NULL,ip text,succeeded boolean NOT NULL DEFAULT false,created_at timestamptz NOT NULL DEFAULT now())`;await sql`CREATE INDEX IF NOT EXISTS agency_login_attempts_email_idx ON agency_login_attempts (lower(email), created_at DESC)`;await sql`CREATE INDEX IF NOT EXISTS agency_login_attempts_ip_idx ON agency_login_attempts (ip, created_at DESC)`;const [{count}]=await sql<{count:number}[]>`SELECT count(*)::int as count FROM agency_users`;if(Number(count)===0&&process.env.ADMIN_PASSWORD){const passwordHash=await hashPassword(process.env.ADMIN_PASSWORD);const email=(process.env.ADMIN_EMAIL||'owner@rcvagency.com').trim().toLowerCase();await sql`INSERT INTO agency_users (email,name,password_hash,role) VALUES (${email},'RCV Agency Owner',${passwordHash},'owner') ON CONFLICT (email) DO NOTHING`}}finally{await sql.end({timeout:2}).catch(()=>undefined)}}
 
-export async function authenticate(email:string,password:string){await ensureAuthTables();const sql=db();if(!sql)throw new Error('DATABASE_URL is not configured');try{const [user]=await sql<any[]>`SELECT id,email,name,role,active,password_hash FROM agency_users WHERE lower(email)=lower(${email.trim()}) LIMIT 1`;if(!user||!user.active||!(await verifyPassword(password,user.password_hash)))return null;await sql`UPDATE agency_users SET last_login_at=now(),updated_at=now() WHERE id=${user.id}`;const token=hex(crypto.getRandomValues(new Uint8Array(32)));await sql`DELETE FROM agency_sessions WHERE expires_at<now()`;await sql`INSERT INTO agency_sessions (user_id,token_hash,expires_at) VALUES (${user.id},${await sha256(token)},now()+interval '7 days')`;return{token,user:{id:user.id,email:user.email,name:user.name,role:user.role as AdminRole,active:true}as AdminUser}}finally{await sql.end({timeout:2}).catch(()=>undefined)}}
+
+// Sign-in throttling ---------------------------------------------------------
+// /admin/login is publicly reachable, so unlimited guessing was possible.
+// Failures are counted per email and per source address over a rolling window.
+
+const LOGIN_WINDOW_MINUTES = 15
+const MAX_FAILURES_PER_EMAIL = 8
+const MAX_FAILURES_PER_IP = 25
+
+export type LoginThrottle = { blocked: boolean; retryAfterSeconds: number }
+
+/** Result is deliberately identical whether or not the email exists. */
+async function checkThrottle(sql: ReturnType<typeof postgres>, email: string, ip: string | null): Promise<LoginThrottle> {
+  const [row] = await sql<any[]>`
+    select
+      (select count(*)::int from agency_login_attempts
+        where lower(email)=lower(${email}) and succeeded=false
+          and created_at > now() - (${LOGIN_WINDOW_MINUTES} || ' minutes')::interval) as "emailFailures",
+      (select count(*)::int from agency_login_attempts
+        where ip is not null and ip=${ip} and succeeded=false
+          and created_at > now() - (${LOGIN_WINDOW_MINUTES} || ' minutes')::interval) as "ipFailures",
+      (select extract(epoch from (min(created_at) + (${LOGIN_WINDOW_MINUTES} || ' minutes')::interval - now()))::int
+         from agency_login_attempts
+        where lower(email)=lower(${email}) and succeeded=false
+          and created_at > now() - (${LOGIN_WINDOW_MINUTES} || ' minutes')::interval) as "resetIn"`
+  const blocked = Number(row?.emailFailures ?? 0) >= MAX_FAILURES_PER_EMAIL
+    || (Boolean(ip) && Number(row?.ipFailures ?? 0) >= MAX_FAILURES_PER_IP)
+  return { blocked, retryAfterSeconds: Math.max(30, Number(row?.resetIn ?? 0) || LOGIN_WINDOW_MINUTES * 60) }
+}
+
+export class LoginThrottledError extends Error {
+  retryAfterSeconds: number
+  constructor(retryAfterSeconds: number) {
+    super('Too many sign-in attempts. Please wait and try again.')
+    this.name = 'LoginThrottledError'
+    this.retryAfterSeconds = retryAfterSeconds
+  }
+}
+
+export async function authenticate(email:string,password:string,ip:string|null=null){await ensureAuthTables();const sql=db();if(!sql)throw new Error('DATABASE_URL is not configured');try{const throttle=await checkThrottle(sql,email.trim(),ip);if(throttle.blocked)throw new LoginThrottledError(throttle.retryAfterSeconds);await sql`DELETE FROM agency_login_attempts WHERE created_at < now() - interval '1 day'`;const [user]=await sql<any[]>`SELECT id,email,name,role,active,password_hash FROM agency_users WHERE lower(email)=lower(${email.trim()}) LIMIT 1`;if(!user||!user.active||!(await verifyPassword(password,user.password_hash))){await sql`INSERT INTO agency_login_attempts (email,ip,succeeded) VALUES (${email.trim()},${ip},false)`;return null}await sql`INSERT INTO agency_login_attempts (email,ip,succeeded) VALUES (${email.trim()},${ip},true)`;await sql`DELETE FROM agency_login_attempts WHERE lower(email)=lower(${email.trim()}) AND succeeded=false`;await sql`UPDATE agency_users SET last_login_at=now(),updated_at=now() WHERE id=${user.id}`;const token=hex(crypto.getRandomValues(new Uint8Array(32)));await sql`DELETE FROM agency_sessions WHERE expires_at<now()`;await sql`INSERT INTO agency_sessions (user_id,token_hash,expires_at) VALUES (${user.id},${await sha256(token)},now()+interval '7 days')`;return{token,user:{id:user.id,email:user.email,name:user.name,role:user.role as AdminRole,active:true}as AdminUser}}finally{await sql.end({timeout:2}).catch(()=>undefined)}}
 
 export async function getCurrentUser():Promise<AdminUser|null>{const token=(await cookies()).get(COOKIE)?.value;if(!token)return null;const sql=db();if(!sql)return null;try{const [user]=await sql<any[]>`SELECT u.id,u.email,u.name,u.role,u.active FROM agency_sessions s JOIN agency_users u ON u.id=s.user_id WHERE s.token_hash=${await sha256(token)} AND s.expires_at>now() AND u.active=true LIMIT 1`;return user?{id:user.id,email:user.email,name:user.name,role:user.role as AdminRole,active:true}:null}catch{return null}finally{await sql.end({timeout:2}).catch(()=>undefined)}}
 export async function requireUser(allowed?:AdminRole[]){const user=await getCurrentUser();if(!user)redirect('/admin/login');if(allowed&&!allowed.includes(user.role))redirect('/admin');return user}
