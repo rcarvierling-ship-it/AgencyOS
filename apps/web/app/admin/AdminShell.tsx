@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import styles from './AdminShell.module.css'
+import MobileNav, { type NavItem } from './MobileNav'
 import { requireUser, type AdminRole } from '../../lib/admin-auth'
+import { getAgencySettings } from '../../lib/settings'
 
 export const adminNav = [
   ['Overview', '/admin', 'home'], ['Inquiries', '/admin/inquiries', 'envelope'], ['Businesses', '/admin/businesses', 'building'], ['Pipeline', '/admin/pipeline', 'chart-bar'], ['Demos', '/admin/demos', 'desktop'], ['Outreach', '/admin/outreach', 'message'], ['Clients', '/admin/clients', 'users-alt'], ['Projects', '/admin/projects', 'folder'], ['Websites', '/admin/websites', 'globe'], ['Hosting', '/admin/hosting', 'server'], ['AI Operations', '/admin/ai', 'robot'], ['Analytics', '/admin/analytics', 'analytics'], ['Settings', '/admin/settings', 'setting'], ['Team & Access', '/admin/team', 'users-alt'],
@@ -10,18 +12,20 @@ function RcvLogo({size=34}:{size?:number}){return <span className={styles.rcvLog
 const intelligence=new Set(['AI Operations','Analytics','Settings','Team & Access'])
 
 export async function AdminShell({children,active='Overview',title,subtitle,action}:{children:React.ReactNode;active?:string;title?:string;subtitle?:string;action?:React.ReactNode}){
- const user=await requireUser();
+ const [user,settings]=await Promise.all([requireUser(),getAgencySettings()]);
  const canManageSettings=user.role==='owner'||user.role==='admin';
  const visibleNav=adminNav.filter(([name])=>name!=='Team & Access'||user.role==='owner').filter(([name])=>name!=='Settings'||canManageSettings)
  const profileHref=user.role==='owner'?'/admin/team':canManageSettings?'/admin/settings':'/admin'
- return <div className={`${styles.app} agencyAdmin`}><aside className={styles.sidebar}>
+ const initials=user.name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase()
+ const mobileItems:NavItem[]=visibleNav.map(([name,href,icon])=>({name,href,icon,group:intelligence.has(name)?'intelligence':'workspace'}))
+ return <div className={`${styles.app} agencyAdmin`}><MobileNav items={mobileItems} active={active} initials={initials} workspaceName={settings.agencyName}/><aside className={styles.sidebar}>
   <div className={styles.brand}><RcvLogo size={32}/><span>RCV <small>AGENCY</small></span></div>
-  <div className={styles.workspace}><RcvLogo size={28}/><div><b>AgencyOS</b><span>Command Center</span></div><Icon name="angle-down" size={12}/></div>
+  <div className={styles.workspace}><RcvLogo size={28}/><div><b>{settings.agencyName}</b><span>Command Center</span></div><Icon name="angle-down" size={12}/></div>
   <div className={styles.label}>Workspace</div><nav>{visibleNav.filter(([name])=>!intelligence.has(name)).map(([name,href,icon])=><Link className={name===active?styles.active:''} href={href} key={name}><span className={styles.navIcon}><Icon name={icon}/></span>{name}</Link>)}</nav>
   <div className={styles.label}>Intelligence</div><nav>{visibleNav.filter(([name])=>intelligence.has(name)).map(([name,href,icon])=><Link className={name===active?styles.active:''} href={href} key={name}><span className={styles.navIcon}><Icon name={icon}/></span>{name}</Link>)}</nav>
   <div className={styles.system}><em/>All systems operational</div>
  </aside><main className={styles.main}>
-  <header className={styles.header}><div><div className={styles.eyebrow}>AgencyOS · Command Center</div>{title&&<h1>{title}</h1>}{subtitle&&<p>{subtitle}</p>}</div><div className={styles.headerRight}><div className={styles.search}><Icon name="search" size={13}/><span>Search AgencyOS</span></div>{canManageSettings&&<Link className={styles.iconButton} href="/admin/settings" aria-label="Settings"><Icon name="setting" size={15}/></Link>}<Link className={styles.profile} href={profileHref} aria-label={`Signed in as ${user.name}`}>{user.name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase()}</Link></div></header>
+  <header className={styles.header}><div><div className={styles.eyebrow}>AgencyOS · Command Center</div>{title&&<h1>{title}</h1>}{subtitle&&<p>{subtitle}</p>}</div><div className={styles.headerRight}><div className={styles.search}><Icon name="search" size={13}/><span>Search AgencyOS</span></div>{canManageSettings&&<Link className={styles.iconButton} href="/admin/settings" aria-label="Settings"><Icon name="setting" size={15}/></Link>}<Link className={styles.profile} href={profileHref} aria-label={`Signed in as ${user.name}`}>{initials}</Link></div></header>
   {action&&<div className={styles.actionRow}>{action}</div>}{children}
  </main></div>
 }
