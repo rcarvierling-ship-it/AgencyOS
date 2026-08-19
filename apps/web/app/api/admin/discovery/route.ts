@@ -1,23 +1,80 @@
 import { NextResponse } from 'next/server'
-import postgres from 'postgres'
 import { requireApiUser } from '../../../../lib/admin-auth'
+import { withWrite } from '../../../../lib/crm'
 import { readSettings } from '../../../../lib/settings'
+import { isPipelineStage } from '../../../../lib/pipeline'
+import { discoverBusinesses, DiscoveryError } from '../../../../lib/discovery'
 
 export const runtime = 'nodejs'
+export const maxDuration = 60
 
-export async function POST(request: Request){
- const auth=await requireApiUser(['owner','admin','manager','operator','agent']); if(!auth.user)return NextResponse.json({error:auth.error},{status:auth.error==='Authentication required'?401:403})
- const body=await request.json().catch(()=>null); const city=String(body?.city||'').trim(); const category=String(body?.category||'').trim(); const radius=Number(body?.radius||25)
- if(!city||!category) return NextResponse.json({error:'City and service category are required'},{status:400})
- const url=process.env.DATABASE_URL; if(!url) return NextResponse.json({error:'Database is not configured. Connect DATABASE_URL before running discovery.'},{status:503})
- const provider=process.env.LEAD_DISCOVERY_URL
- if(!provider) return NextResponse.json({error:'Lead discovery provider is not configured yet. Set LEAD_DISCOVERY_URL for the real search provider.'},{status:503})
- try{
-  const response=await fetch(provider,{method:'POST',headers:{'content-type':'application/json','authorization':process.env.LEAD_DISCOVERY_API_KEY?`Bearer ${process.env.LEAD_DISCOVERY_API_KEY}`:''},body:JSON.stringify({city,category,radius}),cache:'no-store'})
-  if(!response.ok) return NextResponse.json({error:`Discovery provider returned ${response.status}`},{status:502})
-  const payload=await response.json(); const businesses=Array.isArray(payload)?payload:Array.isArray(payload.businesses)?payload.businesses:[]
-  const sql=postgres(url,{prepare:false,max:1}); let created=0
-  try{const settings=await readSettings(sql); for(const b of businesses){const name=String(b.name||'').trim();if(!name)continue;const slug=String(b.slug||name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')).slice(0,120);const website=b.websiteUrl||b.website||null;const existing=await sql<any[]>`select id from businesses where lower(name)=lower(${name}) and coalesce(city,'')=coalesce(${b.city||city},'') limit 1`;if(existing.length)continue;const [row]=await sql<any[]>`insert into businesses (id,name,slug,industry,website_url,phone,address,city,state,postal_code,country,status,opportunity_score,created_at,updated_at) values (gen_random_uuid(),${name},${slug},${category},${website},${b.phone||null},${b.address||null},${b.city||city},${b.state||null},${b.postalCode||b.postal_code||null},${b.country||'US'},${settings.defaultPipelineStage},${website?null:85},now(),now()) returning id`;if(row){await sql`insert into opportunities (id,business_id,name,stage,value_cents,probability,created_at,updated_at) values (gen_random_uuid(),${row.id},${name},${settings.defaultPipelineStage},${settings.defaultOpportunityValueCents},${settings.defaultOpportunityProbability},now(),now())`;created++}}}finally{await sql.end({timeout:2}).catch(()=>undefined)}
-  return NextResponse.json({created,found:businesses.length})
- }catch{return NextResponse.json({error:'Discovery could not be completed'},{status:500})}
+function slugify(value: string) {
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'business'
+}
+
+export async function POST(request: Request) {
+  const auth = await requireApiUser(['owner', 'admin', 'manager', 'operator', 'agent'])
+  if (!auth.user) return NextResponse.json({ error: auth.error }, { status: auth.error === 'Authentication required' ? 401 : 403 })
+
+  const body = await request.json().catch(() => null)
+  const place = String(body?.city || '').trim()
+  const category = String(body?.category || '').trim()
+  const radius = Number(body?.radius || 25)
+  if (!place || !category) return NextResponse.json({ error: 'A place and a service category are required' }, { status: 400 })
+  if (!process.env.DATABASE_URL) return NextResponse.json({ error: 'Database is not configured' }, { status: 503 })
+
+  try {
+    const found = await discoverBusinesses({ place, category, radiusMiles: radius })
+
+    const outcome = await withWrite(sql => sql.begin(async tx => {
+      const settings = await readSettings(tx)
+      const stage = isPipelineStage(settings.defaultPipelineStage) ? settings.defaultPipelineStage : 'discovered'
+      let created = 0, duplicates = 0
+
+      for (const b of found.businesses) {
+        // Skip anything already known, whether by import reference or by the
+        // same name in the same town from an earlier search.
+        const existing = await tx<any[]>`
+          select id from businesses
+          where external_ref = ${b.osmId}
+             or (lower(name) = lower(${b.name}) and coalesce(lower(city),'') = coalesce(lower(${b.city ?? ''}),''))
+          limit 1`
+        if (existing.length) { duplicates++; continue }
+
+        let slug = slugify(b.name)
+        const clash = await tx<any[]>`select id from businesses where slug=${slug} limit 1`
+        if (clash.length) slug = `${slug}-${Math.random().toString(36).slice(2, 7)}`
+
+        const [row] = await tx<any[]>`
+          insert into businesses (name,slug,industry,website_url,phone,address,city,state,postal_code,status,external_ref,metadata)
+          values (${b.name},${slug},${category},${b.websiteUrl},${b.phone},${b.address},
+                  ${b.city ?? null},${b.state ?? null},${b.postalCode ?? null},${stage},${b.osmId},
+                  ${tx.json({ source: 'openstreetmap', osmId: b.osmId, lat: b.lat, lon: b.lon, discoveredBy: auth.user!.name, searchedPlace: found.place })})
+          returning id`
+
+        const [opportunity] = await tx<any[]>`
+          insert into opportunities (business_id,name,stage,value_cents,probability)
+          values (${row.id},'Website opportunity',${stage},${settings.defaultOpportunityValueCents},${settings.defaultOpportunityProbability})
+          returning id`
+        await tx`
+          insert into business_activities (business_id,opportunity_id,type,title,detail,metadata)
+          values (${row.id},${opportunity.id},'note','Discovered via OpenStreetMap',
+                  ${`Found searching ${category} near ${found.place}${b.websiteUrl ? '.' : '. No website recorded in OpenStreetMap.'}`},
+                  ${tx.json({ actor: auth.user!.name, osmId: b.osmId })})`
+        created++
+      }
+      return { created, duplicates }
+    }))
+
+    return NextResponse.json({
+      ...outcome,
+      found: found.businesses.length,
+      withoutWebsite: found.businesses.filter(b => !b.websiteUrl).length,
+      place: found.place,
+    })
+  } catch (error) {
+    if (error instanceof DiscoveryError) return NextResponse.json({ error: error.message }, { status: 422 })
+    console.error('AgencyOS discovery failed', error)
+    return NextResponse.json({ error: 'Discovery could not be completed' }, { status: 500 })
+  }
 }
