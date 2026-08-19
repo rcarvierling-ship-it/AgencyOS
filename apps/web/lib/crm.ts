@@ -89,7 +89,7 @@ export async function createBusiness(input: BusinessInput, actor: string) {
       values (${fields.name},${slug},${fields.industry || null},${fields.websiteUrl || null},${fields.phone || null},
               ${fields.email || null},${fields.address || null},${fields.city || null},${fields.state || null},
               ${fields.postalCode || null},${stage},${fields.opportunityScore},${fields.notes || null},
-              ${JSON.stringify({ source: 'manual', createdBy: actor })}::jsonb)
+              ${tx.json({ source: 'manual', createdBy: actor })})
       returning id, slug, name`
 
     const [opportunity] = await tx<any[]>`
@@ -100,7 +100,7 @@ export async function createBusiness(input: BusinessInput, actor: string) {
     await tx`
       insert into business_activities (business_id,opportunity_id,type,title,detail,metadata)
       values (${business.id},${opportunity.id},'note','Business added',${`Added to AgencyOS by ${actor}.`},
-              ${JSON.stringify({ source: 'manual', actor })}::jsonb)`
+              ${tx.json({ source: 'manual', actor })})`
 
     return business as { id: string; slug: string; name: string }
   }))
@@ -126,7 +126,7 @@ export async function updateBusiness(id: string, input: BusinessInput, actor: st
 
     await sql`
       insert into business_activities (business_id,type,title,detail,metadata)
-      values (${id},'note','Business details updated',${`Updated by ${actor}.`},${JSON.stringify({ actor })}::jsonb)`
+      values (${id},'note','Business details updated',${`Updated by ${actor}.`},${sql.json({ actor })})`
     return business as { id: string; slug: string; name: string }
   })
 }
@@ -146,7 +146,7 @@ export async function addContact(businessId: string, input: { name?: unknown; ro
       returning id,name`
     await tx`
       insert into business_activities (business_id,type,title,detail,metadata)
-      values (${businessId},'note','Contact added',${`${name} added by ${actor}.`},${JSON.stringify({ actor })}::jsonb)`
+      values (${businessId},'note','Contact added',${`${name} added by ${actor}.`},${tx.json({ actor })})`
     return contact
   }))
 }
@@ -164,7 +164,7 @@ export async function logActivity(businessId: string, input: { type?: unknown; t
       select id from opportunities where business_id=${businessId} and stage not in ('won','lost') order by updated_at desc limit 1`
     const [activity] = await tx<any[]>`
       insert into business_activities (business_id,opportunity_id,type,title,detail,metadata)
-      values (${businessId},${opportunity?.id ?? null},${type},${title},${clean(input.detail, 4000) || null},${JSON.stringify({ actor })}::jsonb)
+      values (${businessId},${opportunity?.id ?? null},${type},${title},${clean(input.detail, 4000) || null},${tx.json({ actor })})
       returning id`
     return activity
   }))
@@ -201,6 +201,6 @@ export async function convertWonOpportunity(tx: postgres.ISql, opportunityId: st
   await tx`update businesses set status='won', updated_at=now() where id=${row.businessId}`
   await tx`
     insert into business_activities (business_id,opportunity_id,type,title,detail,metadata)
-    values (${row.businessId},${opportunityId},'note','Opportunity won',${`Client and delivery project created by ${actor}.`},${JSON.stringify({ actor })}::jsonb)`
+    values (${row.businessId},${opportunityId},'note','Opportunity won',${`Client and delivery project created by ${actor}.`},${tx.json({ actor })})`
   return { clientId }
 }

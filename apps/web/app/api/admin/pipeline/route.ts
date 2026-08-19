@@ -34,7 +34,7 @@ export async function PATCH(request: Request) {
           insert into business_activities (business_id,opportunity_id,type,title,detail,metadata)
           values (${current.businessId},${opportunityId},'note','Pipeline stage changed',
                   ${`${stageLabel(current.stage)} → ${stageLabel(stage)}, by ${auth.user!.name}.`},
-                  ${JSON.stringify({ from: current.stage, to: stage, actor: auth.user!.name })}::jsonb)`
+                  ${tx.json({ from: current.stage, to: stage, actor: auth.user!.name })})`
 
         // Winning is the one transition that creates downstream records.
         if (stage === 'won') await convertWonOpportunity(tx, opportunityId, auth.user!.name)

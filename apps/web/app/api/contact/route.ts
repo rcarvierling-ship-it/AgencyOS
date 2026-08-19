@@ -52,7 +52,7 @@ export async function POST(request: Request) {
           businessSlug = baseSlug
           const collision = await tx<any[]>`select id from businesses where slug=${baseSlug} limit 1`
           if (collision[0]) businessSlug = `${baseSlug}-${Math.random().toString(36).slice(2,7)}`
-          const inserted = await tx<any[]>`insert into businesses (name,slug,website_url,phone,email,status,notes,metadata) values (${businessName},${businessSlug},nullif(${currentWebsite},''),nullif(${phone},''),${email},'contacted',${`Inbound website inquiry from ${name}.`},${JSON.stringify({ source:'website_contact_form', contactName:name, service, message })}::jsonb) returning id,slug`
+          const inserted = await tx<any[]>`insert into businesses (name,slug,website_url,phone,email,status,notes,metadata) values (${businessName},${businessSlug},nullif(${currentWebsite},''),nullif(${phone},''),${email},'contacted',${`Inbound website inquiry from ${name}.`},${tx.json({ source:'website_contact_form', contactName:name, service, message })}) returning id,slug`
           businessId = inserted[0].id
           businessSlug = inserted[0].slug
         }
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
           opportunityId = opportunity[0].id
         }
 
-        await tx`insert into business_activities (business_id,opportunity_id,type,title,detail,metadata) values (${businessId},${opportunityId},'inbound_contact','New website project inquiry',${message},${JSON.stringify({ source:'website_contact_form', contactName:name, email, phone, service, currentWebsite })}::jsonb)`
+        await tx`insert into business_activities (business_id,opportunity_id,type,title,detail,metadata) values (${businessId},${opportunityId},'inbound_contact','New website project inquiry',${message},${tx.json({ source:'website_contact_form', contactName:name, email, phone, service, currentWebsite })})`
         return { businessSlug }
       })
 
