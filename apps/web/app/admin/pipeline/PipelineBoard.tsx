@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { PIPELINE_STAGES, stageLabel } from '../../../lib/pipeline'
 
-const STAGES = ['discovered','qualified','researching','demo_ready','contacted','interested','proposal','won'] as const
-
-type Item = { id: string; name: string; slug: string; score: number | null; stage: string }
+type Item = { id: string; name: string; slug: string; score: number | null; value: string | null; stage: string }
 
 export default function PipelineBoard({ initial }: { initial: Item[] }) {
   const [items, setItems] = useState(initial)
@@ -28,16 +27,16 @@ export default function PipelineBoard({ initial }: { initial: Item[] }) {
   }
 
   return <div className="pipeline">
-    {STAGES.map(stage => {
+    {PIPELINE_STAGES.map(stage => {
       const stageItems = items.filter(item => item.stage === stage)
       return <div className={`stage ${dragging ? 'dropTarget' : ''}`} key={stage}
         onDragOver={event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move' }}
         onDrop={event => { event.preventDefault(); const id = event.dataTransfer.getData('text/plain'); if (id) void move(id, stage); setDragging(null) }}>
-        <div className="stageHead"><span>{stage.replaceAll('_',' ')}</span><b>{stageItems.length}</b></div>
+        <div className="stageHead"><span>{stageLabel(stage)}</span><b>{stageItems.length}</b></div>
         {stageItems.map(item => <div className={`item ${dragging === item.id ? 'dragging' : ''}`} draggable key={item.id}
           onDragStart={event => { event.dataTransfer.setData('text/plain', item.id); event.dataTransfer.effectAllowed = 'move'; setDragging(item.id) }}
           onDragEnd={() => setDragging(null)}>
-          <Link href={`/admin/businesses/${item.slug}`}><b>{item.name}</b><span>{item.score != null ? `Opportunity ${item.score}/100` : 'No score yet'}</span></Link>
+          <Link href={`/admin/businesses/${item.slug}`}><b>{item.name}</b><span>{item.score != null ? `Opportunity ${item.score}/100` : 'No score yet'}</span>{item.value && <span className="itemValue">{item.value}</span>}</Link>
           {saving === item.id && <small className="saving">Saving…</small>}
         </div>)}
         {stageItems.length === 0 && <div className="dropHint">Drop businesses here</div>}

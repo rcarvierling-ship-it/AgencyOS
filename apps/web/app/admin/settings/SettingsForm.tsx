@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react'
 import styles from './SettingsForm.module.css'
+import { PIPELINE_STAGES, stageLabel } from '../../../lib/pipeline'
 
 type Settings = {
   agencyName: string
@@ -37,17 +38,7 @@ const fallback: Settings = {
   },
 }
 
-const stages = [
-  ['discovered', 'Discovered'],
-  ['qualified', 'Qualified'],
-  ['researching', 'Researching'],
-  ['demo', 'Demo'],
-  ['ready', 'Ready'],
-  ['contacted', 'Contacted'],
-  ['interested', 'Interested'],
-  ['proposal', 'Proposal'],
-  ['won', 'Won'],
-]
+const stages = PIPELINE_STAGES.map(stage => [stage, stageLabel(stage)] as const)
 
 const timezones = [
   'America/New_York',
