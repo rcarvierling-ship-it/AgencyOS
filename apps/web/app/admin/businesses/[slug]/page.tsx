@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { AdminShell, Card, Pill, Stat, EmptyState } from '../../AdminShell'
 import { ContactForm, ActivityForm } from '../../CrmForms'
+import { AuditButton } from '../../AuditButton'
+import { AuditPanel } from '../../AuditPanel'
 import { getBusiness } from '../../data'
 import { getAgencySettings, formatDateTime } from '../../../../lib/settings'
 import { requireUser } from '../../../../lib/admin-auth'
@@ -44,11 +46,8 @@ export default async function BusinessDetail({ params }: { params: Promise<{ slu
         </div>
       </Card>
       <Card title="Website audit">
-        <div className="detail">
-          {audit ? [['Overall', audit.overallScore], ['Design', audit.designScore], ['Mobile', audit.mobileScore], ['Performance', audit.performanceScore], ['SEO', audit.seoScore], ['Conversion', audit.conversionScore]].map(([label, value]) =>
-            <div className="kv" key={String(label)}><b>{label}</b><span>{value ?? '—'}{value != null ? '/100' : ''}</span></div>)
-            : <EmptyState title="No audit recorded" body="Website auditing is not connected yet, so no scores exist for this business." />}
-        </div>
+        {audit ? <AuditPanel audit={audit} /> : <EmptyState title="Not audited yet" body={business.websiteUrl ? 'Run an audit to score this website and set the opportunity.' : 'This business has no website recorded, which is itself the opportunity. Score it to confirm.'} />}
+        {canWrite && <div className="detail" style={{ paddingTop: audit ? 0 : 14 }}><AuditButton businessId={business.id} hasWebsite={Boolean(business.websiteUrl)} /></div>}
       </Card>
     </div>
 
