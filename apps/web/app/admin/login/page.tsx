@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { RcvMark } from '../RcvMark'
 
 export default function AdminLogin() {
   const router = useRouter()
@@ -25,7 +26,7 @@ export default function AdminLogin() {
   return <main style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'#f6f6f3',color:'#20201e',fontFamily:'Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',padding:24}}>
     <div style={{position:'fixed',inset:0,pointerEvents:'none',background:'radial-gradient(circle at 70% 20%,rgba(37,99,235,.08),transparent 28%),radial-gradient(circle at 25% 80%,rgba(124,58,237,.06),transparent 25%)'}} />
     <section style={{position:'relative',width:'100%',maxWidth:410}}>
-      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:30,fontWeight:750,letterSpacing:'-.04em'}}><span style={{display:'grid',placeItems:'center',width:30,height:30,borderRadius:8,background:'#20201e',color:'#fff',fontSize:13}}>R</span><span>RCV <small style={{fontSize:9,color:'#999',letterSpacing:'.12em',marginLeft:4}}>AGENCY</small></span></div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:30,fontWeight:750,letterSpacing:'-.04em'}}><RcvMark size={30}/><span>RCV <small style={{fontSize:9,color:'#999',letterSpacing:'.12em',marginLeft:4}}>AGENCY</small></span></div>
       <div style={{background:'#fff',border:'1px solid #e4e4df',borderRadius:14,padding:30,boxShadow:'0 25px 70px rgba(30,30,40,.08)'}}>
         <div style={{fontSize:9,color:'#8d8d86',letterSpacing:'.12em',textTransform:'uppercase',fontWeight:650}}>Private workspace</div>
         <h1 style={{fontSize:30,lineHeight:1.05,letterSpacing:'-.055em',margin:'10px 0 9px'}}>Welcome to AgencyOS.</h1>
