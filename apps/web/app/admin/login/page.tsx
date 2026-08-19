@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { RcvMark } from '../RcvMark'
+import { RcvMark } from '../../components/RcvMark'
 
 export default function AdminLogin() {
   const router = useRouter()

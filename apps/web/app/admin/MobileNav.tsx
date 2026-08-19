@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import styles from './AdminShell.module.css'
-import { RcvMark } from './RcvMark'
+import { RcvMark } from '../components/RcvMark'
 
 export type NavItem = { name: string; href: string; icon: string; group: 'workspace' | 'intelligence' }
 

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import styles from './AdminShell.module.css'
 import MobileNav, { type NavItem } from './MobileNav'
-import { RcvMark } from './RcvMark'
+import { RcvMark } from '../components/RcvMark'
 import { requireUser, type AdminRole } from '../../lib/admin-auth'
 import { getAgencySettings } from '../../lib/settings'
 

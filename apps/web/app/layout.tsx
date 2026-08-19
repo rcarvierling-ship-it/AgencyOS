@@ -26,5 +26,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#4F46E5" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en">
+    <head>
+      <link rel="preconnect" href="https://unicons.iconscout.com" />
+      <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css" />
+    </head>
+    <body>{children}</body>
+  </html>;
 }
