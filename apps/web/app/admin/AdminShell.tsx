@@ -1,21 +1,22 @@
 import Link from 'next/link'
 import styles from './AdminShell.module.css'
 import MobileNav, { type NavItem } from './MobileNav'
+import { RcvMark } from './RcvMark'
 import { requireUser, type AdminRole } from '../../lib/admin-auth'
 import { getAgencySettings } from '../../lib/settings'
 
 export const adminNav = [
-  ['Overview', '/admin', 'home'], ['Inquiries', '/admin/inquiries', 'envelope'], ['Businesses', '/admin/businesses', 'building'], ['Pipeline', '/admin/pipeline', 'chart-bar'], ['Demos', '/admin/demos', 'desktop'], ['Outreach', '/admin/outreach', 'message'], ['Clients', '/admin/clients', 'users-alt'], ['Projects', '/admin/projects', 'folder'], ['Websites', '/admin/websites', 'globe'], ['Hosting', '/admin/hosting', 'server'], ['AI Operations', '/admin/ai', 'robot'], ['Analytics', '/admin/analytics', 'analytics'], ['Settings', '/admin/settings', 'setting'], ['Team & Access', '/admin/team', 'users-alt'],
+  ['Overview', '/admin', 'home'], ['Inquiries', '/admin/inquiries', 'envelope'], ['Discovery', '/admin/discovery', 'search'], ['Businesses', '/admin/businesses', 'building'], ['Contacts', '/admin/contacts', 'user-circle'], ['Pipeline', '/admin/pipeline', 'chart-bar'], ['Demos', '/admin/demos', 'desktop'], ['Outreach', '/admin/outreach', 'message'], ['Proposals', '/admin/proposals', 'file-alt'], ['Clients', '/admin/clients', 'users-alt'], ['Projects', '/admin/projects', 'folder'], ['Websites', '/admin/websites', 'globe'], ['Hosting', '/admin/hosting', 'server'], ['AI Operations', '/admin/ai', 'robot'], ['Analytics', '/admin/analytics', 'analytics'], ['Settings', '/admin/settings', 'setting'], ['Team & Access', '/admin/team', 'users-alt'], ['Your account', '/admin/account', 'user'],
 ] as const
 function Icon({name,size=16}:{name:string;size?:number}){return <i aria-hidden="true" className={`uil uil-${name}`} style={{fontSize:size}}/>}
-function RcvLogo({size=34}:{size?:number}){return <span className={styles.rcvLogo} style={{width:size,height:size}} aria-hidden="true"><span>R</span></span>}
-const intelligence=new Set(['AI Operations','Analytics','Settings','Team & Access'])
+function RcvLogo({size=34}:{size?:number}){return <RcvMark size={size}/>}
+const intelligence=new Set(['AI Operations','Analytics','Settings','Team & Access','Your account'])
 
 export async function AdminShell({children,active='Overview',title,subtitle,action}:{children:React.ReactNode;active?:string;title?:string;subtitle?:string;action?:React.ReactNode}){
  const [user,settings]=await Promise.all([requireUser(),getAgencySettings()]);
  const canManageSettings=user.role==='owner'||user.role==='admin';
  const visibleNav=adminNav.filter(([name])=>name!=='Team & Access'||user.role==='owner').filter(([name])=>name!=='Settings'||canManageSettings)
- const profileHref=user.role==='owner'?'/admin/team':canManageSettings?'/admin/settings':'/admin'
+ const profileHref='/admin/account'
  const initials=user.name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase()
  const mobileItems:NavItem[]=visibleNav.map(([name,href,icon])=>({name,href,icon,group:intelligence.has(name)?'intelligence':'workspace'}))
  return <div className={`${styles.app} agencyAdmin`}><MobileNav items={mobileItems} active={active} initials={initials} workspaceName={settings.agencyName}/><aside className={styles.sidebar}>

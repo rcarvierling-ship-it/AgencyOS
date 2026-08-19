@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import styles from './AdminShell.module.css'
+import { RcvMark } from './RcvMark'
 
 export type NavItem = { name: string; href: string; icon: string; group: 'workspace' | 'intelligence' }
 
@@ -50,7 +51,7 @@ export default function MobileNav({ items, active, initials, workspaceName }: {
         <i aria-hidden="true" className="uil uil-bars" />
       </button>
       <Link className={styles.mobileBrand} href="/admin">
-        <span className={styles.rcvLogo} style={{ width: 26, height: 26 }} aria-hidden="true"><span>R</span></span>
+        <RcvMark size={26} />
         <span>RCV <small>AGENCY</small></span>
       </Link>
       <Link className={styles.mobileProfile} href="/admin" aria-label="Your account">{initials}</Link>
@@ -70,7 +71,7 @@ export default function MobileNav({ items, active, initials, workspaceName }: {
     >
       <div className={styles.mobileDrawerHead}>
         <div className={styles.brand}>
-          <span className={styles.rcvLogo} style={{ width: 28, height: 28 }} aria-hidden="true"><span>R</span></span>
+          <RcvMark size={28} />
           <span>RCV <small>AGENCY</small></span>
         </div>
         <button type="button" className={styles.mobileButton} aria-label="Close navigation" onClick={() => setOpen(false)}>
@@ -79,7 +80,7 @@ export default function MobileNav({ items, active, initials, workspaceName }: {
       </div>
 
       <div className={styles.workspace}>
-        <span className={styles.rcvLogo} style={{ width: 26, height: 26 }} aria-hidden="true"><span>R</span></span>
+        <RcvMark size={26} />
         <div><b>{workspaceName}</b><span>Command Center</span></div>
       </div>
 
