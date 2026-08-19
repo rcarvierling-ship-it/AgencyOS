@@ -1,6 +1,7 @@
 {
-  "installCommand": "npm install --workspaces --include-workspace-root",
-  "buildCommand": "npm run build -- --filter=@agencyos/web",
-  "outputDirectory": "apps/web/.next",
-  "framework": "nextjs"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm turbo build --filter=@agencyos/web",
+  "outputDirectory": "apps/web/.next"
 }
