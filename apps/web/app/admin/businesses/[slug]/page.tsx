@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { AdminShell, Card, Pill, Stat, EmptyState } from '../../AdminShell'
 import { ContactForm, ActivityForm } from '../../CrmForms'
 import { AuditButton } from '../../AuditButton'
+import { GenerateDemo, DemoReview } from '../../DemoActions'
 import { AuditPanel } from '../../AuditPanel'
 import { getBusiness } from '../../data'
 import { getAgencySettings, formatDateTime } from '../../../../lib/settings'
@@ -17,7 +18,7 @@ export default async function BusinessDetail({ params }: { params: Promise<{ slu
     <EmptyState title="Business not found" body="This profile does not exist in the AgencyOS database." href="/admin/businesses" label="Back to businesses" />
   </AdminShell>
 
-  const { business, audit, contacts, activities, opportunity } = data
+  const { business, audit, contacts, activities, opportunity, demos } = data
   const canWrite = user.role !== 'viewer'
 
   return <AdminShell active="Businesses" title={business.name} subtitle="Live business profile, intelligence, activity, and opportunity history.">
@@ -50,6 +51,18 @@ export default async function BusinessDetail({ params }: { params: Promise<{ slu
         {canWrite && <div className="detail" style={{ paddingTop: audit ? 0 : 14 }}><AuditButton businessId={business.id} hasWebsite={Boolean(business.websiteUrl)} /></div>}
       </Card>
     </div>
+
+    <Card eyebrow="Concept" title="Demo website">
+      {demos?.length ? <div className="list">{demos.map((d: any) => <div className="listItem" key={d.id}>
+        <div><b>/demo/{d.slug}</b><span>Generated {formatDateTime(d.createdAt, settings)}</span></div>
+        <div className="actions" style={{ marginBottom: 0, alignItems: 'center' }}>
+          <Pill tone={d.status === 'approved' ? 'green' : d.status === 'ready' ? 'blue' : 'neutral'}>{d.status}</Pill>
+          <a className="secondary" href={`/demo/${d.slug}`} target="_blank" rel="noreferrer">Open ↗</a>
+          {['owner','admin','manager'].includes(user.role) && <DemoReview demoId={d.id} status={d.status} />}
+        </div>
+      </div>)}</div> : <div className="detail"><p className="muted" style={{ margin: 0 }}>No concept has been built for this business yet. It is generated from the record above, so fill in industry, location, and phone first.</p></div>}
+      {canWrite && <div className="detail" style={{ paddingTop: 14 }}><GenerateDemo businessId={business.id} /></div>}
+    </Card>
 
     <Card eyebrow="People" title="Contacts">
       {contacts.length ? <div className="list">{contacts.map((c: any) => <div className="listItem" key={c.id}>
