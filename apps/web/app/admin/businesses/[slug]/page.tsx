@@ -1,5 +1,71 @@
 import Link from 'next/link'
 import { AdminShell, Card, Pill, Stat, EmptyState } from '../../AdminShell'
+import { ContactForm, ActivityForm } from '../../CrmForms'
 import { getBusiness } from '../../data'
 import { getAgencySettings, formatDateTime } from '../../../../lib/settings'
-export default async function BusinessDetail({params}:{params:Promise<{slug:string}>}){const {slug}=await params;const [data,settings]=await Promise.all([getBusiness(slug),getAgencySettings()]);if(!data)return <AdminShell active="Businesses" title="Business not found" subtitle="No matching real business record exists."><EmptyState title="Business not found" body="This profile does not exist in the AgencyOS database." href="/admin/businesses" label="Back to businesses"/></AdminShell>;const{business,audit,contacts,activities,opportunity}=data;return <AdminShell active="Businesses" title={business.name} subtitle="Live business profile, intelligence, activity, and opportunity history."><div className="actions"><Link className="secondary" href="/admin/businesses">← Businesses</Link>{business.websiteUrl&&<a className="secondary" href={business.websiteUrl} target="_blank" rel="noreferrer">Open website ↗</a>}<Link className="primary" href="/admin/demos">Create demo →</Link></div><div className="stats"><Stat label="Opportunity" value={business.opportunityScore!=null?`${business.opportunityScore}/100`:'—'}/><Stat label="Website quality" value={audit?.overallScore!=null?`${audit.overallScore}/100`:'Not audited'}/><Stat label="Pipeline stage" value={opportunity?.stage||business.status||'—'}/><Stat label="Activities" value={String(activities.length)}/></div><div className="detailGrid"><Card title="Business intelligence"><div className="detail"><div className="kv"><b>Location</b><span>{[business.address,business.city,business.state,business.postalCode].filter(Boolean).join(', ')||'—'}</span></div><div className="kv"><b>Industry</b><span>{business.industry||'—'}</span></div><div className="kv"><b>Website</b><span>{business.websiteUrl||'No website recorded'}</span></div><div className="kv"><b>Phone</b><span>{business.phone||'—'}</span></div><div className="kv"><b>Email</b><span>{business.email||'—'}</span></div><div className="kv"><b>Primary contact</b><span>{contacts[0]?.name||'No contact recorded'}</span></div></div></Card><Card title="Website audit"><div className="detail">{audit?<>{[['Overall',audit.overallScore],['Design',audit.designScore],['Mobile',audit.mobileScore],['Performance',audit.performanceScore],['SEO',audit.seoScore],['Conversion',audit.conversionScore]].map(([label,value])=><div className="kv" key={String(label)}><b>{label}</b><span>{value??'—'}{value!=null?'/100':''}</span></div>)}</>:<EmptyState title="No audit recorded" body="Run the website audit before qualifying this opportunity." href="/admin/businesses" label="Back to businesses"/>}</div></Card></div><Card title="Relationship timeline">{activities.length?<div className="list">{activities.map(a=><div className="listItem" key={a.id}><div><b>{a.title}</b><span>{a.detail||a.type} · {formatDateTime(a.createdAt,settings)}</span></div><Pill>{a.type}</Pill></div>)}</div>:<EmptyState title="No activity yet" body="This business has no recorded activity."/>}</Card></AdminShell>}
+import { requireUser } from '../../../../lib/admin-auth'
+import { stageLabel } from '../../../../lib/pipeline'
+
+export const dynamic = 'force-dynamic'
+
+export default async function BusinessDetail({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const [user, data, settings] = await Promise.all([requireUser(), getBusiness(slug), getAgencySettings()])
+  if (!data) return <AdminShell active="Businesses" title="Business not found" subtitle="No matching real business record exists.">
+    <EmptyState title="Business not found" body="This profile does not exist in the AgencyOS database." href="/admin/businesses" label="Back to businesses" />
+  </AdminShell>
+
+  const { business, audit, contacts, activities, opportunity } = data
+  const canWrite = user.role !== 'viewer'
+
+  return <AdminShell active="Businesses" title={business.name} subtitle="Live business profile, intelligence, activity, and opportunity history.">
+    <div className="actions">
+      <Link className="secondary" href="/admin/businesses">← Businesses</Link>
+      {business.websiteUrl && <a className="secondary" href={business.websiteUrl} target="_blank" rel="noreferrer">Open website ↗</a>}
+      {canWrite && <Link className="primary" href={`/admin/businesses/${business.slug}/edit`}>Edit business</Link>}
+    </div>
+
+    <div className="stats">
+      <Stat label="Opportunity" value={business.opportunityScore != null ? `${business.opportunityScore}/100` : '—'} />
+      <Stat label="Website quality" value={audit?.overallScore != null ? `${audit.overallScore}/100` : 'Not audited'} />
+      <Stat label="Pipeline stage" value={stageLabel(opportunity?.stage || business.status || '—')} />
+      <Stat label="Activities" value={String(activities.length)} />
+    </div>
+
+    <div className="detailGrid">
+      <Card title="Business intelligence">
+        <div className="detail">
+          <div className="kv"><b>Location</b><span>{[business.address, business.city, business.state, business.postalCode].filter(Boolean).join(', ') || '—'}</span></div>
+          <div className="kv"><b>Industry</b><span>{business.industry || '—'}</span></div>
+          <div className="kv"><b>Website</b><span>{business.websiteUrl || 'No website recorded'}</span></div>
+          <div className="kv"><b>Phone</b><span>{business.phone || '—'}</span></div>
+          <div className="kv"><b>Email</b><span>{business.email || '—'}</span></div>
+          <div className="kv"><b>Notes</b><span>{business.notes || '—'}</span></div>
+        </div>
+      </Card>
+      <Card title="Website audit">
+        <div className="detail">
+          {audit ? [['Overall', audit.overallScore], ['Design', audit.designScore], ['Mobile', audit.mobileScore], ['Performance', audit.performanceScore], ['SEO', audit.seoScore], ['Conversion', audit.conversionScore]].map(([label, value]) =>
+            <div className="kv" key={String(label)}><b>{label}</b><span>{value ?? '—'}{value != null ? '/100' : ''}</span></div>)
+            : <EmptyState title="No audit recorded" body="Website auditing is not connected yet, so no scores exist for this business." />}
+        </div>
+      </Card>
+    </div>
+
+    <Card eyebrow="People" title="Contacts">
+      {contacts.length ? <div className="list">{contacts.map((c: any) => <div className="listItem" key={c.id}>
+        <div><b>{c.name}</b><span>{[c.role, c.email, c.phone].filter(Boolean).join(' · ') || 'No details recorded'}</span></div>
+        <Pill tone={c.source === 'website_contact_form' ? 'blue' : 'neutral'}>{c.source === 'website_contact_form' ? 'Website form' : c.source || 'Manual'}</Pill>
+      </div>)}</div> : <div className="detail"><p className="muted" style={{ margin: 0 }}>No contacts recorded yet.</p></div>}
+      {canWrite && <ContactForm businessId={business.id} />}
+    </Card>
+
+    <Card eyebrow="Timeline" title="Relationship history">
+      {canWrite && <ActivityForm businessId={business.id} />}
+      {activities.length ? <div className="list">{activities.map((a: any) => <div className="listItem" key={a.id}>
+        <div><b>{a.title}</b><span>{a.detail || a.type} · {formatDateTime(a.createdAt, settings)}</span></div>
+        <Pill>{a.type}</Pill>
+      </div>)}</div> : <div className="detail"><p className="muted" style={{ margin: 0 }}>Nothing recorded against this business yet.</p></div>}
+    </Card>
+  </AdminShell>
+}
