@@ -42,6 +42,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const agencyName = String(body.agencyName ?? '').trim()
     const websiteUrl = String(body.websiteUrl ?? '').trim()
+    const postalAddress = String(body.postalAddress ?? '').trim().slice(0, 300)
     const timezone = String(body.timezone ?? '').trim()
     const currency = String(body.currency ?? '').trim().toUpperCase()
     const defaultPipelineStage = String(body.defaultPipelineStage ?? '').trim()
@@ -70,7 +71,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Default probability must be between 0 and 100.' }, { status: 400 })
     }
 
-    const rows = await sql<Record<string, unknown>[]>`INSERT INTO agency_settings (id,agency_name,website_url,timezone,currency,default_pipeline_stage,default_opportunity_value_cents,default_opportunity_probability,notifications,updated_at) VALUES ('default',${agencyName},${websiteUrl || null},${timezone},${currency},${defaultPipelineStage},${defaultOpportunityValueCents},${defaultOpportunityProbability},${sql!.json(notifications)},now()) ON CONFLICT (id) DO UPDATE SET agency_name=EXCLUDED.agency_name,website_url=EXCLUDED.website_url,timezone=EXCLUDED.timezone,currency=EXCLUDED.currency,default_pipeline_stage=EXCLUDED.default_pipeline_stage,default_opportunity_value_cents=EXCLUDED.default_opportunity_value_cents,default_opportunity_probability=EXCLUDED.default_opportunity_probability,notifications=EXCLUDED.notifications,updated_at=now() RETURNING *`
+    const rows = await sql<Record<string, unknown>[]>`INSERT INTO agency_settings (id,agency_name,website_url,postal_address,timezone,currency,default_pipeline_stage,default_opportunity_value_cents,default_opportunity_probability,notifications,updated_at) VALUES ('default',${agencyName},${websiteUrl || null},${postalAddress || null},${timezone},${currency},${defaultPipelineStage},${defaultOpportunityValueCents},${defaultOpportunityProbability},${sql!.json(notifications)},now()) ON CONFLICT (id) DO UPDATE SET agency_name=EXCLUDED.agency_name,website_url=EXCLUDED.website_url,postal_address=EXCLUDED.postal_address,timezone=EXCLUDED.timezone,currency=EXCLUDED.currency,default_pipeline_stage=EXCLUDED.default_pipeline_stage,default_opportunity_value_cents=EXCLUDED.default_opportunity_value_cents,default_opportunity_probability=EXCLUDED.default_opportunity_probability,notifications=EXCLUDED.notifications,updated_at=now() RETURNING *`
     return NextResponse.json(normalizeSettings(rows[0]))
   } catch (error) {
     console.error('AgencyOS settings PUT failed', error)

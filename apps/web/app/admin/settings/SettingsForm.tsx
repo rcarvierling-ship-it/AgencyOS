@@ -7,6 +7,7 @@ import { PIPELINE_STAGES, stageLabel } from '../../../lib/pipeline'
 type Settings = {
   agencyName: string
   websiteUrl: string
+  postalAddress: string
   timezone: string
   currency: string
   defaultPipelineStage: string
@@ -24,6 +25,7 @@ type Settings = {
 const fallback: Settings = {
   agencyName: 'RCV Agency',
   websiteUrl: 'https://rcvagency.com',
+  postalAddress: '',
   timezone: 'America/New_York',
   currency: 'USD',
   defaultPipelineStage: 'discovered',
@@ -111,6 +113,7 @@ export function SettingsForm() {
           <div className={styles.fields}>
             <label><span>Agency name</span><input value={settings.agencyName} onChange={(e) => update('agencyName', e.target.value)} required /></label>
             <label><span>Agency website</span><input type="url" value={settings.websiteUrl} onChange={(e) => update('websiteUrl', e.target.value)} placeholder="https://rcvagency.com" /></label>
+            <label><span>Postal address</span><input value={settings.postalAddress ?? ''} onChange={(e) => update('postalAddress', e.target.value)} placeholder="Required on commercial email" /></label>
             <label><span>Timezone</span><select value={settings.timezone} onChange={(e) => update('timezone', e.target.value)}>{timezones.map((zone) => <option key={zone} value={zone}>{zone.replaceAll('_', ' ')}</option>)}</select></label>
             <label><span>Currency</span><select value={settings.currency} onChange={(e) => update('currency', e.target.value)}><option value="USD">USD — US Dollar</option><option value="CAD">CAD — Canadian Dollar</option><option value="GBP">GBP — Pound Sterling</option><option value="EUR">EUR — Euro</option></select></label>
           </div>

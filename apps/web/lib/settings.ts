@@ -5,6 +5,7 @@ export type AgencySettings = {
   id: string
   agencyName: string
   websiteUrl: string
+  postalAddress: string | null
   timezone: string
   currency: string
   defaultPipelineStage: string
@@ -19,6 +20,7 @@ export const SETTINGS_DEFAULTS: AgencySettings = {
   id: 'default',
   agencyName: 'RCV Agency',
   websiteUrl: 'https://rcvagency.com',
+  postalAddress: null,
   timezone: 'America/New_York',
   currency: 'USD',
   defaultPipelineStage: 'discovered',
@@ -37,6 +39,7 @@ export function normalizeSettings(row: Record<string, unknown> | undefined): Age
     id: String(row.id ?? SETTINGS_DEFAULTS.id),
     agencyName: String(row.agency_name ?? SETTINGS_DEFAULTS.agencyName),
     websiteUrl: String(row.website_url ?? SETTINGS_DEFAULTS.websiteUrl),
+    postalAddress: row.postal_address ? String(row.postal_address) : null,
     timezone: String(row.timezone ?? SETTINGS_DEFAULTS.timezone),
     currency: String(row.currency ?? SETTINGS_DEFAULTS.currency),
     // Guard against a stage that was valid when saved but has since been removed.

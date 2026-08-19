@@ -3,6 +3,7 @@ import { AdminShell, Card, Pill, Stat, EmptyState } from '../../AdminShell'
 import { ContactForm, ActivityForm } from '../../CrmForms'
 import { AuditButton } from '../../AuditButton'
 import { GenerateDemo, DemoReview } from '../../DemoActions'
+import { DraftOutreach, OutreachStatus } from '../../OutreachActions'
 import { AuditPanel } from '../../AuditPanel'
 import { getBusiness } from '../../data'
 import { getAgencySettings, formatDateTime } from '../../../../lib/settings'
@@ -18,7 +19,7 @@ export default async function BusinessDetail({ params }: { params: Promise<{ slu
     <EmptyState title="Business not found" body="This profile does not exist in the AgencyOS database." href="/admin/businesses" label="Back to businesses" />
   </AdminShell>
 
-  const { business, audit, contacts, activities, opportunity, demos } = data
+  const { business, audit, contacts, activities, opportunity, demos, outreach } = data
   const canWrite = user.role !== 'viewer'
 
   return <AdminShell active="Businesses" title={business.name} subtitle="Live business profile, intelligence, activity, and opportunity history.">
@@ -62,6 +63,20 @@ export default async function BusinessDetail({ params }: { params: Promise<{ slu
         </div>
       </div>)}</div> : <div className="detail"><p className="muted" style={{ margin: 0 }}>No concept has been built for this business yet. It is generated from the record above, so fill in industry, location, and phone first.</p></div>}
       {canWrite && <div className="detail" style={{ paddingTop: 14 }}><GenerateDemo businessId={business.id} /></div>}
+    </Card>
+
+    <Card eyebrow="Outreach" title="Messages">
+      {business.doNotContact && <div className="detail" style={{ paddingBottom: 0 }}>
+        <div className="note">This business asked not to be contacted. Nothing further can be drafted against it.</div>
+      </div>}
+      {outreach?.length ? <div className="list">{outreach.map((m: any) => <div className="listItem" key={m.id}>
+        <div style={{ minWidth: 0 }}><b>{m.subject}</b><span>{m.toEmail ?? 'No email address'} · {formatDateTime(m.createdAt, settings)}</span></div>
+        <div className="actions" style={{ marginBottom: 0, alignItems: 'center' }}>
+          <Pill tone={m.status === 'interested' ? 'green' : m.status === 'declined' ? 'red' : m.status === 'sent' ? 'purple' : 'neutral'}>{m.status.replace('_',' ')}</Pill>
+          {canWrite && <OutreachStatus messageId={m.id} status={m.status} />}
+        </div>
+      </div>)}</div> : <div className="detail"><p className="muted" style={{ margin: 0 }}>Nothing drafted yet. A message is written from this business&apos;s audit findings and its approved concept.</p></div>}
+      {canWrite && !business.doNotContact && <div className="detail" style={{ paddingTop: 14 }}><DraftOutreach businessId={business.id} /></div>}
     </Card>
 
     <Card eyebrow="People" title="Contacts">
