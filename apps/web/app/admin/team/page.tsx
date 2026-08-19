@@ -1,12 +1,13 @@
 import { AdminShell, Card, Pill } from '../AdminShell'
 import { requireUser, listUsers } from '../../../lib/admin-auth'
 import { TeamManager } from './TeamManager'
+import { getAgencySettings } from '../../../lib/settings'
 
 export const dynamic = 'force-dynamic'
 
 export default async function TeamPage() {
   const user = await requireUser(['owner'])
-  const users = await listUsers()
+  const [users, settings] = await Promise.all([listUsers(), getAgencySettings()])
   return <AdminShell active="Team & Access" title="Team & Access" subtitle="Control who can enter AgencyOS and exactly what they are allowed to do.">
     <div className="stats">
       <div className="stat"><span>Team members</span><strong>{users.length}</strong></div>
@@ -15,7 +16,7 @@ export default async function TeamPage() {
       <div className="stat"><span>Your role</span><strong>Owner</strong></div>
     </div>
     <Card eyebrow="Access control" title="Agency users">
-      <TeamManager initialUsers={users} currentUserId={user.id} />
+      <TeamManager initialUsers={users} currentUserId={user.id} timezone={settings.timezone} />
     </Card>
     <Card eyebrow="Recommended for OpenClaw" title="Create a dedicated agent account">
       <div className="empty" style={{paddingTop:18,paddingBottom:18}}>

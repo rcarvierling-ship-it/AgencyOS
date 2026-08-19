@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import postgres from 'postgres'
+import { readSettings } from '../../../lib/settings'
 
 export const runtime = 'nodejs'
 
@@ -35,6 +36,9 @@ export async function POST(request: Request) {
     const sql = postgres(databaseUrl, { prepare: false, max: 1 })
     try {
       const result = await sql.begin(async (tx) => {
+        // Opportunity defaults come from the workspace settings so /admin/settings
+        // governs real records rather than only describing them.
+        const settings = await readSettings(tx)
         const existing = await tx<any[]>`select id,slug from businesses where lower(email)=lower(${email}) order by updated_at desc limit 1`
         let businessId: string
         let businessSlug: string
@@ -64,7 +68,9 @@ export async function POST(request: Request) {
           opportunityId = activeOpportunity[0].id
           await tx`update opportunities set stage='contacted', updated_at=now() where id=${opportunityId}`
         } else {
-          const opportunity = await tx<any[]>`insert into opportunities (business_id,name,stage,value_cents,probability) values (${businessId},'Website project inquiry','contacted',250000,50) returning id`
+          // An inbound inquiry is by definition already at 'contacted'; the
+          // configured default stage governs discovered leads, not these.
+          const opportunity = await tx<any[]>`insert into opportunities (business_id,name,stage,value_cents,probability) values (${businessId},'Website project inquiry','contacted',${settings.defaultOpportunityValueCents},${settings.defaultOpportunityProbability}) returning id`
           opportunityId = opportunity[0].id
         }
 
