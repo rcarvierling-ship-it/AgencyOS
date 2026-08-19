@@ -28,6 +28,34 @@ export async function createUser(input:{email:string;name:string;password:string
 export async function listUsers(){await ensureAuthTables();const sql=db();if(!sql)return[];try{return await sql<any[]>`SELECT id,email,name,role,active,created_at as "createdAt",last_login_at as "lastLoginAt" FROM agency_users ORDER BY CASE role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END,name`}finally{await sql.end({timeout:2}).catch(()=>undefined)}}
 export async function updateUser(id:string,input:{name?:string;role?:AdminRole;active?:boolean;password?:string}){if(input.role&&!ASSIGNABLE_ROLES.includes(input.role))throw new Error('The owner role is reserved for the primary AgencyOS owner');if(input.password!==undefined&&input.password.length<12)throw new Error('Password must be at least 12 characters');await ensureAuthTables();const sql=db();if(!sql)throw new Error('DATABASE_URL is not configured');try{const [target]=await sql<any[]>`SELECT role FROM agency_users WHERE id=${id}`;if(!target)throw new Error('User not found');if(target.role==='owner')throw new Error('The primary owner account cannot be modified here');const passwordHash=input.password?await hashPassword(input.password):null;const [user]=await sql<any[]>`UPDATE agency_users SET name=COALESCE(${input.name?.trim()||null},name),role=COALESCE(${input.role||null},role),active=COALESCE(${input.active??null},active),password_hash=COALESCE(${passwordHash},password_hash),updated_at=now() WHERE id=${id} RETURNING id,email,name,role,active,created_at as "createdAt",last_login_at as "lastLoginAt"`;return user}finally{await sql.end({timeout:2}).catch(()=>undefined)}}
 export async function deleteUser(id:string){await ensureAuthTables();const sql=db();if(!sql)throw new Error('DATABASE_URL is not configured');try{const [target]=await sql<any[]>`SELECT role FROM agency_users WHERE id=${id}`;if(!target)return false;if(target.role==='owner')throw new Error('The primary owner account cannot be deleted');await sql`DELETE FROM agency_users WHERE id=${id}`;return true}finally{await sql.end({timeout:2}).catch(()=>undefined)}}
+export async function getAccount():Promise<(AdminUser&{lastLoginAt:string|null;createdAt:string})|null>{const token=(await cookies()).get(COOKIE)?.value;if(!token)return null;const sql=db();if(!sql)return null;try{const [user]=await sql<any[]>`SELECT u.id,u.email,u.name,u.role,u.active,u.last_login_at as "lastLoginAt",u.created_at as "createdAt" FROM agency_sessions s JOIN agency_users u ON u.id=s.user_id WHERE s.token_hash=${await sha256(token)} AND s.expires_at>now() AND u.active=true LIMIT 1`;return user??null}catch{return null}finally{await sql.end({timeout:2}).catch(()=>undefined)}}
+
+/**
+ * Self-service password change. This is the only path by which the primary
+ * owner's password can be rotated: updateUser deliberately refuses to touch an
+ * owner row, so without this the owner credential was permanent.
+ *
+ * Changing a password signs out that user's other sessions. The caller's own
+ * session is preserved so they are not logged out of the tab they are using.
+ */
+export async function changeOwnPassword(userId:string,currentPassword:string,newPassword:string){
+ if(typeof newPassword!=='string'||newPassword.length<12)throw new Error('New password must be at least 12 characters')
+ if(newPassword.length>200)throw new Error('New password is too long')
+ if(!currentPassword)throw new Error('Enter your current password')
+ const sql=db();if(!sql)throw new Error('DATABASE_URL is not configured')
+ try{
+  const [user]=await sql<any[]>`SELECT password_hash FROM agency_users WHERE id=${userId} AND active=true LIMIT 1`
+  if(!user)throw new Error('Account not found')
+  if(!(await verifyPassword(currentPassword,user.password_hash)))throw new Error('Your current password is incorrect')
+  if(await verifyPassword(newPassword,user.password_hash))throw new Error('Choose a password different from your current one')
+  await sql`UPDATE agency_users SET password_hash=${await hashPassword(newPassword)},updated_at=now() WHERE id=${userId}`
+  const keep=(await cookies()).get(COOKIE)?.value
+  if(keep)await sql`DELETE FROM agency_sessions WHERE user_id=${userId} AND token_hash<>${await sha256(keep)}`
+  else await sql`DELETE FROM agency_sessions WHERE user_id=${userId}`
+  return true
+ }finally{await sql.end({timeout:2}).catch(()=>undefined)}
+}
+
 export function sessionCookie(token:string){return{name:COOKIE,value:token,httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax' as const,path:'/',maxAge:60*60*24*SESSION_DAYS}}
 export async function clearCurrentSession(){const token=(await cookies()).get(COOKIE)?.value;if(!token)return;const sql=db();if(!sql)return;try{await sql`DELETE FROM agency_sessions WHERE token_hash=${await sha256(token)}`}finally{await sql.end({timeout:2}).catch(()=>undefined)}}
 export const adminRoles=ROLES
