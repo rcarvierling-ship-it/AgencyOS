@@ -1,1 +1,0 @@
-export default function Portal(){return <main style={{minHeight:'100vh',background:'#080909',color:'#f5f5f2',padding:'10vw',fontFamily:'Arial'}}><h1>RCV Agency Client Portal</h1><p style={{color:'#999'}}>Your projects, files, approvals, invoices, hosting, and support will live here.</p></main>}
