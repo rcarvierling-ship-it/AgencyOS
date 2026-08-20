@@ -13,7 +13,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   try {
     const { id } = await params
-    const body = await request.json().catch(() => null) as { html?: string; error?: string; status?: string } | null
+    const body = await request.json().catch(() => null) as { html?: string; error?: string; status?: string; requeue?: boolean } | null
 
     if (body?.error) {
       await withWrite(sql => sql.begin(async tx => {
@@ -28,6 +28,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           values (${build.businessId},'note','Mockup build failed',${String(body.error).slice(0, 500)},${tx.json({ agent: agent.name })})`
       }))
       return NextResponse.json({ ok: true })
+    }
+
+    // A worker that could not start — rate limited, signed out — hands the job
+    // back untouched. Marking it failed would lose work nobody attempted.
+    if (body?.requeue) {
+      await withWrite(sql => sql`
+        update demo_builds set status='queued', claimed_by=null, claimed_at=null, updated_at=now()
+        where id=${id} and status in ('claimed','building')`)
+      return NextResponse.json({ ok: true, requeued: true })
     }
 
     if (body?.status === 'building') {

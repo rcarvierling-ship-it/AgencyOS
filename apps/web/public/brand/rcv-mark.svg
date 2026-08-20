@@ -1,20 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="RCV Agency">
   <defs>
-    <linearGradient id="rcvTile" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#7C3AED"/>
-      <stop offset=".52" stop-color="#4F46E5"/>
-      <stop offset="1" stop-color="#2563EB"/>
-    </linearGradient>
-    <linearGradient id="rcvSheen" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff" stop-opacity=".22"/>
-      <stop offset=".55" stop-color="#fff" stop-opacity="0"/>
+    <linearGradient id="rcvRise" x1="8" y1="48" x2="56" y2="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2563EB"/><stop offset=".55" stop-color="#7C3AED"/><stop offset="1" stop-color="#F97362"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="15" fill="url(#rcvTile)"/>
-  <rect width="64" height="64" rx="15" fill="url(#rcvSheen)"/>
-  <g fill="none" stroke="#fff" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M20 46V17h13a8 8 0 0 1 0 16H20"/>
-    <path d="m31.5 33 12.5 13"/>
-  </g>
-  <circle cx="47.5" cy="17.5" r="3.4" fill="#22D3EE"/>
+  <path d="M8 46 22 28l10 11L56 11" fill="none" stroke="url(#rcvRise)" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10 58h34" fill="none" stroke="#18181B" stroke-width="7.5" stroke-linecap="round"/>
 </svg>

@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 // Next 15 wants themeColor on the viewport export, not metadata.
-export const viewport: Viewport = { themeColor: "#4F46E5" };
+export const viewport: Viewport = { themeColor: "#2563EB" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en">

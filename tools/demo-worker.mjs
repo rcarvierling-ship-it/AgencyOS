@@ -37,6 +37,11 @@ if (!TOKEN) {
 const headers = { authorization: `Bearer ${TOKEN}`, 'x-agent-name': AGENT_NAME, 'content-type': 'application/json' }
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a)
 
+// Claude Code being unavailable is not the job's fault. Detect it so the queue
+// is not burned through, marking every pending build failed in seconds.
+const RATE_LIMITED = /session limit|usage limit|rate limit|too many requests|quota|resets? (at )?\d/i
+class Unavailable extends Error {}
+
 async function claim() {
   const response = await fetch(`${BASE}/api/agent/builds/next`, { method: 'POST', headers })
   if (response.status === 204) return null
@@ -83,6 +88,7 @@ async function buildOne(job) {
 
     const out = join(dir, 'mockup.html')
     if (!existsSync(out)) {
+      if (code !== 0 && RATE_LIMITED.test(tail)) throw new Unavailable(tail.slice(-200).trim())
       throw new Error(code === 0
         ? 'Claude Code finished without writing mockup.html'
         : `claude exited ${code} and wrote nothing: ${tail.slice(-400).trim()}`)
@@ -94,6 +100,11 @@ async function buildOne(job) {
     const ok = await report(job.id, { html })
     log(ok ? `  ✓ delivered ${(html.length / 1024).toFixed(0)} KB → ${BASE}/demo/${job.demoSlug}` : '  ! delivery failed')
   } catch (error) {
+    if (error instanceof Unavailable) {
+      log(`  ⏸ Claude Code is unavailable — handing the job back: ${error.message}`)
+      await report(job.id, { requeue: true })
+      throw error                      // stop this pass; the watcher backs off
+    }
     log(`  ✗ ${error.message}`)
     await report(job.id, { error: error.message })
   } finally {
@@ -120,16 +131,20 @@ if (flag('--watch')) {
   log(`watching ${BASE} every ${interval / 1000}s — press Ctrl+C to stop`)
   let quiet = false
   for (;;) {
+    let backoff = interval
     try {
       const built = await drain()
       if (built) { log(`built ${built}; watching again`); quiet = false }
       else if (!quiet) { log('queue empty; watching'); quiet = true }
     } catch (error) {
       // A network blip or a redeploy must not kill the watcher.
-      log(`! ${error.message}`)
+      if (error instanceof Unavailable) {
+        backoff = 5 * 60 * 1000
+        log(`paused 5m — jobs left queued, nothing marked failed`)
+      } else log(`! ${error.message}`)
       quiet = false
     }
-    await sleep(interval)
+    await sleep(backoff)
   }
 }
 
