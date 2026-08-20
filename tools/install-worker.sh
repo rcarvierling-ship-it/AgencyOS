@@ -74,8 +74,16 @@ cat > "$PLIST" <<PLIST_EOF
 PLIST_EOF
 
 chmod 600 "$PLIST"   # the plist carries the agent token
-launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+# bootout is asynchronous; bootstrapping too soon fails with an I/O error.
+if launchctl print "gui/$(id -u)/$LABEL" >/dev/null 2>&1; then
+  launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+  for _ in $(seq 1 20); do
+    launchctl print "gui/$(id -u)/$LABEL" >/dev/null 2>&1 || break
+    sleep 0.25
+  done
+fi
 launchctl bootstrap "gui/$(id -u)" "$PLIST"
+launchctl kickstart -k "gui/$(id -u)/$LABEL" 2>/dev/null || true
 
 echo "Installed and started."
 echo "  watching : $URL"
