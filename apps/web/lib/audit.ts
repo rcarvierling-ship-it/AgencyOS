@@ -46,7 +46,7 @@ function isPrivateAddress(ip: string) {
   return false
 }
 
-async function assertPublicUrl(raw: string) {
+export async function assertPublicUrl(raw: string) {
   let url: URL
   try { url = new URL(raw) } catch { throw new Error('That is not a valid URL') }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error('Only http and https URLs can be audited')
@@ -68,7 +68,7 @@ async function assertPublicUrl(raw: string) {
 }
 
 /** Follows redirects by hand so every hop is re-validated against the guard. */
-async function fetchPage(startUrl: string) {
+export async function fetchPage(startUrl: string) {
   let current = await assertPublicUrl(startUrl)
   let redirects = 0
   let httpUpgraded = false
