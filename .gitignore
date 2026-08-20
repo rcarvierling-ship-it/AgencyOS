@@ -3,11 +3,13 @@ node_modules/
 .pnp
 .pnp.js
 
-# builds
+# builds — anchored to the repository root, because an unanchored `build/`
+# also matches source directories such as app/api/.../build/
 .next/
-out/
-build/
-dist/
+/out/
+/build/
+/dist/
+**/.next/
 *.tsbuildinfo
 next-env.d.ts
 
