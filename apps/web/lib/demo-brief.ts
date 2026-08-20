@@ -90,13 +90,15 @@ This is NOT their production site. It is a single self-contained page.`)
 
   sections.push(`## Use these skills
 
-Load and follow BOTH before writing any markup:
+Invoke BOTH with the Skill tool before writing any markup. These are exact skill
+names — do not substitute or approximate them:
 
-1. The **impeccable** skill — for design direction, craft and verification.
-2. The **taste** skill — for anti-generic judgement.
+1. \`impeccable\` — design direction, craft, and the verification pass.
+2. \`design-taste-frontend\` — anti-generic judgement, so this does not read as a template.
 
-Do not skip either. The entire point of this build is that it does not look like a
-template, and those skills are how that happens.`)
+Do not skip either, and do not proceed on your own taste alone. If a named skill does
+not resolve, say so in your final message rather than continuing silently — a concept
+built without them is not what was asked for.`)
 
   sections.push(`## What is actually known about this business
 
