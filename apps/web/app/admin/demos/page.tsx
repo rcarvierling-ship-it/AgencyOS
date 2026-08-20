@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { AdminShell, Card, Stat, Pill, EmptyState } from '../AdminShell'
 import { DemoReview, RequeueBuild } from '../DemoActions'
 import { BuildWatcher } from '../BuildWatcher'
+import { DemoPreview as DemoPreviewTrigger } from '../DemoPreview'
 import { getDemos } from '../data'
 import { getAgencySettings, formatDateTime } from '../../../lib/settings'
 import { requireUser } from '../../../lib/admin-auth'
@@ -52,7 +53,8 @@ export default async function Demos() {
     </div></div>}
 
     <Card eyebrow="Review queue" title="Concepts">
-      {demos.length ? <div className="list">{demos.map((d: any) => <div className="listItem" key={d.id}>
+      {demos.length ? <div className="list">{demos.map((d: any) => <div className="listItem" key={d.id}
+        style={['ready', 'approved'].includes(d.status) ? { flexWrap: 'wrap' } : undefined}>
         <div style={{ minWidth: 0 }}>
           <b>{d.name}</b>
           <span>
@@ -68,11 +70,11 @@ export default async function Demos() {
         <div className="actions" style={{ marginBottom: 0, alignItems: 'center' }}>
           {d.buildStatus && d.buildStatus !== 'ready' && <Pill tone={BUILD_TONE[d.buildStatus as keyof typeof BUILD_TONE] ?? 'neutral'}>build {d.buildStatus}</Pill>}
           <Pill tone={TONE[d.status as keyof typeof TONE] ?? 'neutral'}>{d.status}</Pill>
-          {d.status === 'ready' || d.status === 'approved' ? <a className="secondary" href={d.previewUrl} target="_blank" rel="noreferrer">Open concept ↗</a> : null}
           <Link className="secondary" href={`/admin/businesses/${d.businessSlug}`}>Business</Link>
           {canWrite && d.buildId && ['failed', 'claimed', 'building'].includes(d.buildStatus) && <RequeueBuild buildId={d.buildId} />}
           {canReview && ['ready', 'approved', 'rejected'].includes(d.status) && <DemoReview demoId={d.id} status={d.status} />}
         </div>
+        {['ready', 'approved'].includes(d.status) && <DemoPreviewTrigger slug={d.slug} businessName={d.name} />}
       </div>)}</div> : <EmptyState title="No concepts yet" body="Build one from a business profile. It is composed from that business's own record and audit, so fill those in first." href="/admin/businesses" label="Open businesses" />}
     </Card>
   </AdminShell>
