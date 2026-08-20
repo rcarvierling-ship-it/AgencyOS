@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { AdminShell, Card, Pill, Stat, EmptyState } from '../../AdminShell'
 import { ContactForm, ActivityForm } from '../../CrmForms'
 import { AuditButton } from '../../AuditButton'
-import { GenerateDemo, DemoReview } from '../../DemoActions'
+import { GenerateDemo, DemoReview, BuildMockup } from '../../DemoActions'
 import { DraftOutreach, OutreachStatus } from '../../OutreachActions'
 import { AuditPanel } from '../../AuditPanel'
 import { getBusiness } from '../../data'
@@ -62,7 +62,12 @@ export default async function BusinessDetail({ params }: { params: Promise<{ slu
           {['owner','admin','manager'].includes(user.role) && <DemoReview demoId={d.id} status={d.status} />}
         </div>
       </div>)}</div> : <div className="detail"><p className="muted" style={{ margin: 0 }}>No concept has been built for this business yet. It is generated from the record above, so fill in industry, location, and phone first.</p></div>}
-      {canWrite && <div className="detail" style={{ paddingTop: 14 }}><GenerateDemo businessId={business.id} /></div>}
+      {canWrite && <div className="detail" style={{ paddingTop: 14, display: 'grid', gap: 10 }}>
+        <BuildMockup businessId={business.id} />
+        <details><summary style={{ fontSize: 9, color: '#8d8d87', cursor: 'pointer' }}>Or generate the quick template concept instead</summary>
+          <div style={{ paddingTop: 10 }}><GenerateDemo businessId={business.id} /></div>
+        </details>
+      </div>}
     </Card>
 
     <Card eyebrow="Outreach" title="Messages">

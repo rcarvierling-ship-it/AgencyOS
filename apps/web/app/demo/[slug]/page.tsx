@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic'
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const demo = await getDemoBySlug(slug)
-  const name = demo?.content?.businessName ?? 'Website concept'
+  // A Claude Code build has no template content, so fall back to the record.
+  const name = demo?.content?.businessName ?? demo?.business ?? 'Website concept'
   return {
     title: `${name} — website concept by RCV Agency`,
     description: `A website concept prepared for ${name} by RCV Agency.`,
@@ -23,13 +24,27 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
 
   // The slug carries a random suffix, so the link is the capability. A rejected
   // concept still stops rendering, so a withdrawn link cannot keep circulating.
-  if (!demo?.content || demo.status === 'rejected') {
+  if (!demo || demo.status === 'rejected' || (!demo.content && !demo.html)) {
     return <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'Inter,system-ui,sans-serif', padding: 24, textAlign: 'center' }}>
       <div>
         <h1 style={{ fontSize: 22, letterSpacing: '-.03em', margin: '0 0 8px' }}>This concept is not available.</h1>
         <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>The link may have expired, or the concept may not have been published yet.</p>
       </div>
     </main>
+  }
+
+  if (demo.html) {
+    // Claude Code returns a complete document. Nesting one inside Next's own
+    // <html> only renders because browsers are lenient about it, so lift the
+    // stylesheets out of its <head> and mount just the body content.
+    const headHtml = /<head[^>]*>([\s\S]*?)<\/head>/i.exec(demo.html)?.[1] ?? ''
+    const assets = (headHtml.match(/<link[^>]+rel=["']?(?:stylesheet|preconnect)["']?[^>]*>|<style[\s\S]*?<\/style>/gi) ?? []).join('\n')
+    const bodyHtml = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(demo.html)?.[1] ?? demo.html
+    const bodyAttrs = /<body([^>]*)>/i.exec(demo.html)?.[1] ?? ''
+    const bodyClass = /class=["']([^"']*)["']/i.exec(bodyAttrs)?.[1] ?? ''
+
+    return <div className={`demoBuilt ${bodyClass}`.trim()}
+      dangerouslySetInnerHTML={{ __html: assets + bodyHtml }} />
   }
 
   const c = demo.content as DemoContent
