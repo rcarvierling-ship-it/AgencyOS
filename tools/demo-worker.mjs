@@ -7,10 +7,12 @@
 //   AGENT_API_TOKEN=... node tools/demo-worker.mjs
 //
 // Options:
-//   --url <base>     AgencyOS base URL (default https://www.rcvagency.com)
-//   --once           Build a single job and exit
-//   --keep           Leave the working directory in place for inspection
-//   --model <name>   Model passed to Claude Code
+//   --url <base>       AgencyOS base URL (default https://www.rcvagency.com)
+//   --once             Build a single job and exit
+//   --watch            Poll forever, building whatever appears (used by launchd)
+//   --interval <secs>  Poll interval in watch mode (default 15)
+//   --keep             Leave the working directory in place for inspection
+//   --model <name>     Model passed to Claude Code
 
 import { spawn } from 'node:child_process'
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
@@ -100,15 +102,36 @@ async function buildOne(job) {
   }
 }
 
-const job = await claim()
-if (!job) { log('nothing queued'); process.exit(0) }
-await buildOne(job)
+const sleep = ms => new Promise(r => setTimeout(r, ms))
 
-if (!flag('--once')) {
+async function drain() {
+  let built = 0
   for (;;) {
-    const next = await claim()
-    if (!next) break
-    await buildOne(next)
+    const job = await claim()
+    if (!job) return built
+    await buildOne(job)
+    built++
+    if (flag('--once')) return built
   }
 }
-log('queue empty')
+
+if (flag('--watch')) {
+  const interval = Math.max(5, Number(opt('--interval', 15))) * 1000
+  log(`watching ${BASE} every ${interval / 1000}s — press Ctrl+C to stop`)
+  let quiet = false
+  for (;;) {
+    try {
+      const built = await drain()
+      if (built) { log(`built ${built}; watching again`); quiet = false }
+      else if (!quiet) { log('queue empty; watching'); quiet = true }
+    } catch (error) {
+      // A network blip or a redeploy must not kill the watcher.
+      log(`! ${error.message}`)
+      quiet = false
+    }
+    await sleep(interval)
+  }
+}
+
+const built = await drain()
+log(built ? `built ${built}` : 'nothing queued')

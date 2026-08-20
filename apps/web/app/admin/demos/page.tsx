@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { AdminShell, Card, Stat, Pill, EmptyState } from '../AdminShell'
 import { DemoReview, RequeueBuild } from '../DemoActions'
+import { BuildWatcher } from '../BuildWatcher'
 import { getDemos } from '../data'
 import { getAgencySettings, formatDateTime } from '../../../lib/settings'
 import { requireUser } from '../../../lib/admin-auth'
@@ -32,10 +33,14 @@ export default async function Demos() {
     </div>
 
     {pending > 0 && <div className="card"><div className="detail">
-      <div className="kv"><b>Build queue</b><Pill tone="amber">{pending} waiting</Pill></div>
+      <div className="kv"><b>Build queue</b><span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <Pill tone="amber">{pending} in flight</Pill><BuildWatcher active={pending} />
+      </span></div>
       <p className="muted" style={{ margin: '12px 0 0', lineHeight: 1.7 }}>
-        Claude Code runs on your machine, not here. Run <code>node tools/demo-worker.mjs</code> with{' '}
-        <code>AGENT_API_TOKEN</code> set to build these. A build takes a few minutes each.
+        Claude Code runs on your machine rather than here, so the worker picks these up and
+        posts the finished page back. This page refreshes itself while that happens — a build
+        takes a few minutes. If nothing moves, check the worker with{' '}
+        <code>./tools/install-worker.sh --status</code>.
       </p>
     </div></div>}
 
