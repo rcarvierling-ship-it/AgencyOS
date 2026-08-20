@@ -104,6 +104,9 @@ export type OutreachStatus = (typeof OUTREACH_STATUSES)[number]
 /** Statuses that mean the conversation is over and nothing further should go out. */
 export const TERMINAL_STATUSES: readonly string[] = ['declined', 'bounced']
 
+// Deliberately not re-exporting from ./mailer: this module is imported by a
+// client component for OUTREACH_STATUSES, and re-exporting would drag the
+// nodemailer transport toward the browser bundle.
 export function isEmailProviderConfigured() {
-  return Boolean(process.env.OUTREACH_EMAIL_API_KEY && process.env.OUTREACH_EMAIL_FROM)
+  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)
 }

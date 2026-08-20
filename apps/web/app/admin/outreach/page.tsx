@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { AdminShell, Card, Pill, Stat, EmptyState } from '../AdminShell'
-import { OutreachStatus } from '../OutreachActions'
+import { OutreachStatus, SendOutreach, VerifySmtp } from '../OutreachActions'
 import { getOutreach } from '../data'
 import { getAgencySettings, formatDateTime } from '../../../lib/settings'
 import { isEmailProviderConfigured } from '../../../lib/outreach'
@@ -33,10 +33,13 @@ export default async function Outreach() {
     {!providerReady && <div className="card"><div className="detail">
       <div className="kv"><b>Email provider</b><Pill tone="amber">Not configured</Pill></div>
       <p className="muted" style={{ margin: '12px 0 0', lineHeight: 1.7 }}>
-        AgencyOS drafts and tracks messages but cannot send them yet. Set <code>OUTREACH_EMAIL_API_KEY</code> and{' '}
-        <code>OUTREACH_EMAIL_FROM</code> to enable sending. Until then, send a message from your own mail client and
-        mark it sent here to confirm it really went out — nothing is recorded as sent unless it actually was.
+        AgencyOS drafts and tracks messages but cannot send them yet. Set <code>SMTP_HOST</code>,{' '}
+        <code>SMTP_USER</code>, <code>SMTP_PASS</code> and <code>SMTP_FROM</code> to enable sending — any mailbox you
+        control will do. Transactional providers such as Resend prohibit cold outreach in their terms, which is why
+        this sends through your own mailbox rather than theirs. Until it is configured, send from your mail client and
+        mark the message sent here; nothing is recorded as sent unless it actually was.
       </p>
+      <div style={{ marginTop: 14 }}><VerifySmtp /></div>
       {!settings.postalAddress && <p className="muted" style={{ margin: '10px 0 0', lineHeight: 1.7 }}>
         No postal address is set in <Link className="link" href="/admin/settings">Settings</Link>. Commercial email is
         required to carry one, and drafts will flag this until it is filled in.
@@ -60,6 +63,7 @@ export default async function Outreach() {
           <Pill tone={TONE[m.status] ?? 'neutral'}>{m.status.replace('_', ' ')}</Pill>
           {m.demoSlug && <a className="secondary" href={`/demo/${m.demoSlug}`} target="_blank" rel="noreferrer">Concept ↗</a>}
           <Link className="secondary" href={`/admin/businesses/${m.slug}`}>Business</Link>
+              {canWrite && <SendOutreach messageId={m.id} status={m.status} hasEmail={Boolean(m.toEmail)} />}
           {canWrite && <OutreachStatus messageId={m.id} status={m.status} />}
         </div>
       </div>)}</div> : <EmptyState title="No outreach yet" body="Draft a message from a business profile. It is written from that business's audit findings and approved concept, so run those first." href="/admin/businesses" label="Open businesses" />}
