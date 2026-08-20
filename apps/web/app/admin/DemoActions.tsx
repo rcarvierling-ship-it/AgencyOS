@@ -87,3 +87,31 @@ export function DemoReview({ demoId, status }: { demoId: string; status: string 
     {error && <span style={{ color: '#9a2424', fontSize: 9 }}>{error}</span>}
   </div>
 }
+
+export function RequeueBuild({ buildId }: { buildId: string }) {
+  const router = useRouter()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function run() {
+    setBusy(true); setError('')
+    try {
+      const response = await fetch('/api/admin/builds', {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ buildId, action: 'requeue' }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || 'Could not requeue')
+      router.refresh()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not requeue')
+    } finally { setBusy(false) }
+  }
+
+  return <>
+    <button className={styles.ghost} style={{ height: 32, fontSize: 9 }} disabled={busy} onClick={run} type="button">
+      {busy ? 'Requeueing…' : 'Retry build'}
+    </button>
+    {error && <span style={{ color: '#9a2424', fontSize: 8 }}>{error}</span>}
+  </>
+}

@@ -21,7 +21,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           update demo_builds set status='failed', error=${String(body.error).slice(0, 2000)}, completed_at=now(), updated_at=now()
           where id=${id} returning business_id as "businessId", demo_id as "demoId"`
         if (!build) throw new Error('Build not found')
-        if (build.demoId) await tx`update demos set status='rejected', updated_at=now() where id=${build.demoId}`
+        // 'failed' not 'rejected': a broken build is not a human declining the
+        // concept, and conflating them hides real failures behind a decision.
+        if (build.demoId) await tx`update demos set status='failed', updated_at=now() where id=${build.demoId}`
         await tx`insert into business_activities (business_id,type,title,detail,metadata)
           values (${build.businessId},'note','Mockup build failed',${String(body.error).slice(0, 500)},${tx.json({ agent: agent.name })})`
       }))
