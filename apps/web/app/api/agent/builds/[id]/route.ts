@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { authenticateAgent, agentUnauthorized } from '../../../../../lib/agent-auth'
 import { withWrite } from '../../../../../lib/crm'
+import { inspectBuild } from '../../../../../lib/build-health'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -51,9 +52,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'That does not look like a complete HTML document' }, { status: 400 })
     }
 
+    // Inspect before recording: a concept that renders broken must say so.
+    const health = await inspectBuild(html)
+
     const result = await withWrite(sql => sql.begin(async tx => {
       const [build] = await tx<any[]>`
-        update demo_builds set status='ready', output_html=${html}, completed_at=now(), error=null, updated_at=now()
+        update demo_builds set status='ready', output_html=${html}, health=${tx.json(health)}, completed_at=now(), error=null, updated_at=now()
         where id=${id} returning business_id as "businessId", demo_id as "demoId"`
       if (!build) throw new Error('Build not found')
 
@@ -61,12 +65,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       if (build.demoId) await tx`update demos set status='ready', updated_at=now() where id=${build.demoId}`
       await tx`update businesses set status=case when status in ('discovered','qualified','researching') then 'demo_ready' else status end, updated_at=now() where id=${build.businessId}`
       await tx`insert into business_activities (business_id,type,title,detail,metadata)
-        values (${build.businessId},'note','Mockup built',${`Claude Code returned a concept (${Math.round(html.length / 1024)} KB). Ready for review.`},${tx.json({ agent: agent.name })})`
+        values (${build.businessId},'note','Mockup built',${`Claude Code returned a concept (${Math.round(html.length / 1024)} KB). ${health.warnings.length ? health.warnings.join(' ') : 'No issues found.'}`},${tx.json({ agent: agent.name, health })})`
       const [demo] = await tx<any[]>`select slug from demos where id=${build.demoId}`
       return { demoSlug: demo?.slug }
     }))
 
-    return NextResponse.json({ ok: true, ...result })
+    return NextResponse.json({ ok: true, ...result, health })
   } catch (error) {
     console.error('AgencyOS build submit failed', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to record the build' }, { status: 400 })

@@ -24,6 +24,7 @@ export default async function Demos() {
 
   const pending = demos.filter((d: any) => ['queued', 'claimed', 'building'].includes(d.buildStatus)).length
   const broken = demos.filter((d: any) => d.buildStatus === 'failed').length
+  const unhealthy = demos.filter((d: any) => d.buildHealth?.warnings?.length).length
 
   return <AdminShell active="Demos" title="Demos" subtitle="Website concepts built from real business records, reviewed before any outreach.">
     <div className="stats">
@@ -52,6 +53,14 @@ export default async function Demos() {
       </p>
     </div></div>}
 
+    {unhealthy > 0 && <div className="card"><div className="detail">
+      <div className="kv"><b>Concepts with problems</b><Pill tone="red">{unhealthy}</Pill></div>
+      <p className="muted" style={{ margin: '12px 0 0', lineHeight: 1.7 }}>
+        These were delivered but did not pass inspection — usually images that do not load, which
+        show as empty blocks to the prospect. Rebuild them before approving or sending.
+      </p>
+    </div></div>}
+
     <Card eyebrow="Review queue" title="Concepts">
       {demos.length ? <div className="list">{demos.map((d: any) => <div className="listItem" key={d.id}
         style={{ flexWrap: 'wrap' }}>
@@ -63,12 +72,16 @@ export default async function Demos() {
             {' · '}{formatDateTime(d.createdAt, settings)}
           </span>
           {d.buildError && <span style={{ display: 'block', marginTop: 4, color: '#b42318' }}>{d.buildError}</span>}
+          {d.buildHealth?.warnings?.length ? <span style={{ display: 'block', marginTop: 5, color: '#b4600f' }}>
+            {d.buildHealth.warnings.join(' ')}
+          </span> : null}
           {['queued', 'claimed', 'building'].includes(d.buildStatus) && <span style={{ display: 'block', marginTop: 4, color: '#9a6a16' }}>
             {d.buildStatus === 'queued' ? 'Waiting for a worker to claim it.' : `Claimed by ${d.claimedBy ?? 'a worker'} — building.`}
           </span>}
         </div>
         <div className="actions" style={{ marginBottom: 0, alignItems: 'center' }}>
           {d.buildStatus && d.buildStatus !== 'ready' && <Pill tone={BUILD_TONE[d.buildStatus as keyof typeof BUILD_TONE] ?? 'neutral'}>build {d.buildStatus}</Pill>}
+          {d.buildHealth?.warnings?.length ? <Pill tone="red">needs attention</Pill> : null}
           <Pill tone={TONE[d.status as keyof typeof TONE] ?? 'neutral'}>{d.status}</Pill>
           <Link className="secondary" href={`/admin/businesses/${d.businessSlug}`}>Business</Link>
           {canWrite && d.buildId && ['failed', 'claimed', 'building'].includes(d.buildStatus) && <RequeueBuild buildId={d.buildId} />}
