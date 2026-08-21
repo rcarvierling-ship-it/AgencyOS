@@ -31,7 +31,28 @@ const decode = (s: string) => s
 const strip = (html: string) => decode(html.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim()
 
 function absolute(src: string, base: URL) {
-  try { return new URL(src, base).toString() } catch { return null }
+  try {
+    // Entities must be decoded first: a src of "?url=x&amp;w=640" resolves to a
+    // parameter literally named "amp;w", and an image optimiser handed no width
+    // returns 400. Every hotlinked image breaks, silently.
+    return new URL(decode(src), base).toString()
+  } catch { return null }
+}
+
+/** Confirms an image actually serves before it is offered to a build. */
+async function reachableImages(urls: string[], limit = 10): Promise<string[]> {
+  const candidates = urls.slice(0, limit)
+  const results = await Promise.all(candidates.map(async url => {
+    try {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 6000)
+      try {
+        const response = await fetch(url, { method: 'GET', headers: { range: 'bytes=0-0' }, signal: controller.signal, cache: 'no-store' })
+        return response.ok || response.status === 206 ? url : null
+      } finally { clearTimeout(timer) }
+    } catch { return null }
+  }))
+  return results.filter((u): u is string => Boolean(u))
 }
 
 /** Filters out spacers, tracking pixels, icons and sprites. */
@@ -94,7 +115,12 @@ export async function researchWebsite(rawUrl: string): Promise<BusinessResearch>
   const brandColors = [...new Set([...html.matchAll(/#([0-9a-f]{6})\b/gi)].map(m => '#' + m[1]!.toLowerCase()))]
     .filter(c => !/^#(fff|000)/.test(c) && c !== '#ffffff' && c !== '#000000').slice(0, 8)
 
-  if (!images.length) notes.push('No usable photography was found on the existing site — the mockup will need images supplied.')
+  // A dead image URL in a concept is worse than none: it leaves a sized empty
+  // block that reads as a broken page.
+  const usable = await reachableImages(images)
+  const dropped = images.length - usable.length
+  if (dropped > 0) notes.push(`${dropped} image${dropped === 1 ? '' : 's'} on their site could not be loaded and were excluded.`)
+  if (!usable.length) notes.push('No usable photography was found on the existing site — the mockup will need images supplied.')
   if (!testimonials.length) notes.push('No testimonials or reviews were found on the existing site. None may be invented for the mockup.')
   if (!services.length) notes.push('No clear service list was found — services will have to come from the business record or be confirmed.')
 
@@ -106,7 +132,7 @@ export async function researchWebsite(rawUrl: string): Promise<BusinessResearch>
     services,
     about,
     testimonials: testimonials.slice(0, 8),
-    images,
+    images: usable,
     socials,
     emails,
     phones,

@@ -235,6 +235,8 @@ work someone paid for.
   measure (60-75 characters), deliberate weight contrast.
 - **Detail work matters.** Considered hover and focus states, real spacing rhythm,
   hairlines and rules where they help, no default browser styling anywhere.
+- **Edit it.** A concept should be persuasive, not exhaustive — six to eight sections that
+  each earn their place, not every idea you had. Length is not quality.
 
 Explicitly forbidden, because they are what generic AI output looks like:
 - A centred hero above three equal-width cards above a coloured call-to-action band.
