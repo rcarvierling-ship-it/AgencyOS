@@ -35,7 +35,7 @@ if (!TOKEN) {
 }
 
 const headers = { authorization: `Bearer ${TOKEN}`, 'x-agent-name': AGENT_NAME, 'content-type': 'application/json' }
-const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a)
+const log = (...a) => console.log(new Date().toLocaleTimeString('en-GB', { hour12: false }), ...a)
 
 // Claude Code being unavailable is not the job's fault. Detect it so the queue
 // is not burned through, marking every pending build failed in seconds.

@@ -38,10 +38,10 @@ export default async function Demos() {
         <Pill tone="amber">{pending} in flight</Pill><BuildWatcher active={pending} />
       </span></div>
       <p className="muted" style={{ margin: '12px 0 0', lineHeight: 1.7 }}>
-        Claude Code runs on your machine rather than here, so the worker picks these up and
-        posts the finished page back. This page refreshes itself while that happens — a build
-        takes a few minutes. If nothing moves, check the worker with{' '}
-        <code>./tools/install-worker.sh --status</code>.
+        Claude Code runs on your machine rather than here, so the worker picks these up on its
+        own and posts the finished page back — nothing to run. This page refreshes itself while
+        that happens, and a build takes a few minutes. If a job sits unclaimed for a while,
+        check the worker with <code>./tools/install-worker.sh --status</code>.
       </p>
     </div></div>}
 

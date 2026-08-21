@@ -8,7 +8,7 @@ export function BuildMockup({ businessId }: { businessId: string }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [queued, setQueued] = useState<{ variation?: { archetypeName?: string }; researchError?: string | null } | null>(null)
+  const [queued, setQueued] = useState<{ variation?: { archetypeName?: string; paletteName?: string }; researchError?: string | null } | null>(null)
 
   async function run() {
     setBusy(true); setError(''); setQueued(null)
@@ -28,7 +28,10 @@ export function BuildMockup({ businessId }: { businessId: string }) {
       {busy ? 'Researching and queueing…' : 'Build a mockup with Claude Code'}
     </button>
     {queued && <div className={styles.success}>
-      Queued as <b>{queued.variation?.archetypeName}</b>. Run <code>node tools/demo-worker.mjs</code> to build it.
+      Queued as <b>{queued.variation?.archetypeName}</b>
+      {queued.variation?.paletteName ? <> in <b>{queued.variation.paletteName}</b></> : null}.
+      The worker picks it up within about fifteen seconds and a build takes a few minutes —
+      watch it on <a className="link" href="/admin/demos">Demos</a>.
       {queued.researchError ? ` Their site could not be read: ${queued.researchError}` : ''}
     </div>}
     {error && <div className={styles.error}>{error}</div>}
