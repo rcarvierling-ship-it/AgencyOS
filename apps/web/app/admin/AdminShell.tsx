@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import styles from './AdminShell.module.css'
 import MobileNav, { type NavItem } from './MobileNav'
+import { ThemeToggle } from './ThemeToggle'
 import { RcvMark } from '../components/RcvMark'
 import { requireUser, type AdminRole } from '../../lib/admin-auth'
 import { getAgencySettings } from '../../lib/settings'
@@ -26,7 +27,7 @@ export async function AdminShell({children,active='Overview',title,subtitle,acti
   <div className={styles.label}>Intelligence</div><nav>{visibleNav.filter(([name])=>intelligence.has(name)).map(([name,href,icon])=><Link className={name===active?styles.active:''} href={href} key={name}><span className={styles.navIcon}><Icon name={icon}/></span>{name}</Link>)}</nav>
   <div className={styles.system}><em/>All systems operational</div>
  </aside><main className={styles.main}>
-  <header className={styles.header}><div><div className={styles.eyebrow}>AgencyOS · Command Center</div>{title&&<h1>{title}</h1>}{subtitle&&<p>{subtitle}</p>}</div><div className={styles.headerRight}><form className={styles.search} action="/admin/businesses" method="get" role="search"><Icon name="search" size={13}/><input name="q" placeholder="Search businesses" aria-label="Search AgencyOS"/></form>{canManageSettings&&<Link className={styles.iconButton} href="/admin/settings" aria-label="Settings"><Icon name="setting" size={15}/></Link>}<Link className={styles.profile} href={profileHref} aria-label={`Signed in as ${user.name}`}>{initials}</Link></div></header>
+  <header className={styles.header}><div><div className={styles.eyebrow}>AgencyOS · Command Center</div>{title&&<h1>{title}</h1>}{subtitle&&<p>{subtitle}</p>}</div><div className={styles.headerRight}><form className={styles.search} action="/admin/businesses" method="get" role="search"><Icon name="search" size={13}/><input name="q" placeholder="Search businesses" aria-label="Search AgencyOS"/></form><ThemeToggle/>{canManageSettings&&<Link className={styles.iconButton} href="/admin/settings" aria-label="Settings"><Icon name="setting" size={15}/></Link>}<Link className={styles.profile} href={profileHref} aria-label={`Signed in as ${user.name}`}>{initials}</Link></div></header>
   {action&&<div className={styles.actionRow}>{action}</div>}{children}
  </main></div>
 }

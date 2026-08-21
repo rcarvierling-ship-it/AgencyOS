@@ -1,16 +1,16 @@
 .form{padding:20px;display:grid;gap:16px;max-width:640px}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .field{display:grid;gap:7px}
-.field span{font-size:13px;font-weight:650;color:#5c5c57}
-.field input{height:40px;border:1px solid #dcdcd6;background:#fafaf8;border-radius:8px;padding:0 12px;font:inherit;font-size:14px;color:#20201e;outline:none;transition:border-color .16s,box-shadow .16s,background .16s}
-.field input:focus{border-color:#315be8;background:#fff;box-shadow:0 0 0 3px rgba(49,91,232,.12)}
-.field small{font-size:12px;color:#9a9a94}
-.warn{color:#b4600f}
+.field span{font-size:13px;font-weight:650;color:var(--ink-2)}
+.field input{height:40px;border:1px solid var(--line-strong);background:var(--s-sunken);border-radius:8px;padding:0 12px;font:inherit;font-size:14px;color:var(--ink);outline:none;transition:border-color .16s,box-shadow .16s,background .16s}
+.field input:focus{border-color:var(--accent);background:var(--s-card);box-shadow:0 0 0 3px var(--accent-ring)}
+.field small{font-size:12px;color:var(--muted-2)}
+.warn{color:var(--warn-ink)}
 .actions{display:flex;gap:8px}
-.primary{border:0;border-radius:8px;background:#20201e;color:#fff;padding:11px 16px;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
-.primary:disabled{background:#b8b8b3;cursor:not-allowed}
-.error{background:#fff0f0;color:#9a2424;border-radius:8px;padding:11px 13px;font-size:13px}
-.success{background:#edf9f1;color:#176b39;border-radius:8px;padding:11px 13px;font-size:13px}
-.signOut{border:1px solid #e7e7e2;border-radius:8px;background:#fff;color:#b42318;padding:11px 16px;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
-.signOut:hover{background:#fff7f6;border-color:#f0cdc8}
+.primary{border:0;border-radius:8px;background:var(--ink);color:var(--s-card);padding:11px 16px;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.primary:disabled{background:var(--disabled);cursor:not-allowed}
+.error{background:var(--danger-soft);color:var(--danger-ink);border-radius:8px;padding:11px 13px;font-size:13px}
+.success{background:var(--ok-soft);color:var(--ok-ink);border-radius:8px;padding:11px 13px;font-size:13px}
+.signOut{border:1px solid var(--line);border-radius:8px;background:var(--s-card);color:var(--danger);padding:11px 16px;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.signOut:hover{background:var(--danger-soft);border-color:var(--danger-line)}
 @media(max-width:760px){.form{padding:14px}.pair{grid-template-columns:1fr}}
