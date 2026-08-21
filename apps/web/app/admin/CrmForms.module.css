@@ -1,17 +1,17 @@
 .form{padding:20px;display:grid;gap:16px}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.field{display:grid;gap:6px;font-size:8px;font-weight:650;color:#5c5c57;text-transform:uppercase;letter-spacing:.06em}
-.field input,.field select,.field textarea{width:100%;border:1px solid #e7e7e2;background:#fafaf8;border-radius:8px;padding:10px 11px;font:inherit;font-size:11px;font-weight:400;color:#20201e;outline:none;text-transform:none;letter-spacing:0;transition:border-color .16s,box-shadow .16s,background .16s}
+.field{display:grid;gap:6px;font-size:12px;font-weight:650;color:#5c5c57;text-transform:uppercase;letter-spacing:.06em}
+.field input,.field select,.field textarea{width:100%;border:1px solid #e7e7e2;background:#fafaf8;border-radius:8px;padding:10px 11px;font:inherit;font-size:14px;font-weight:400;color:#20201e;outline:none;text-transform:none;letter-spacing:0;transition:border-color .16s,box-shadow .16s,background .16s}
 .field input,.field select{height:38px;padding:0 11px}
 .field textarea{min-height:96px;resize:vertical;line-height:1.6}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:#315be8;background:#fff;box-shadow:0 0 0 3px rgba(49,91,232,.12)}
 .field input::placeholder,.field textarea::placeholder{color:#a8a8a2}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.primary{border:0;border-radius:8px;background:#20201e;color:#fff;padding:11px 16px;font:inherit;font-size:10px;font-weight:650;cursor:pointer;height:38px}
+.primary{border:0;border-radius:8px;background:#20201e;color:#fff;padding:11px 16px;font:inherit;font-size:13px;font-weight:650;cursor:pointer;height:38px}
 .primary:disabled{background:#b8b8b3;cursor:not-allowed}
-.ghost{border:1px solid #e7e7e2;border-radius:8px;background:#fff;color:#555;padding:11px 16px;font:inherit;font-size:10px;font-weight:650;cursor:pointer;height:38px;text-decoration:none;display:inline-flex;align-items:center}
-.error{background:#fff0f0;color:#9a2424;border-radius:8px;padding:11px 13px;font-size:9px}
-.success{background:#edf9f1;color:#176b39;border-radius:8px;padding:11px 13px;font-size:9px}
-.hint{font-size:8px;color:#9a9a94;text-transform:none;letter-spacing:0;font-weight:400}
+.ghost{border:1px solid #e7e7e2;border-radius:8px;background:#fff;color:#555;padding:11px 16px;font:inherit;font-size:13px;font-weight:650;cursor:pointer;height:38px;text-decoration:none;display:inline-flex;align-items:center}
+.error{background:#fff0f0;color:#9a2424;border-radius:8px;padding:11px 13px;font-size:13px}
+.success{background:#edf9f1;color:#176b39;border-radius:8px;padding:11px 13px;font-size:13px}
+.hint{font-size:12px;color:#9a9a94;text-transform:none;letter-spacing:0;font-weight:400}
 @media(max-width:760px){.form{padding:14px}.grid,.grid3{grid-template-columns:1fr}}

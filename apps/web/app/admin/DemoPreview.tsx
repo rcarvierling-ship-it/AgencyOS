@@ -34,14 +34,20 @@ export function DemoPreview({ slug, businessName }: { slug: string; businessName
   }, [open])
 
   if (!open) {
-    return <button className={styles.ghost} style={{ height: 32, fontSize: 9, order: -1 }} type="button" onClick={() => setOpen(true)}>
+    return <button className={styles.ghost} style={{ height: 32, fontSize: 11 }} type="button" onClick={() => setOpen(true)}>
       Preview
     </button>
   }
 
   // flexBasis 100% makes the open panel take its own line in the wrapped row
   // rather than being squeezed into the actions column.
-  return <div style={{ flexBasis: '100%', width: '100%', marginTop: 14 }}>
+  // A fragment: the trigger stays inline in the row's action cluster while the
+  // panel takes flex-basis 100% so it wraps onto its own full-width line.
+  return <>
+    <button className={styles.ghost} style={{ height: 32, fontSize: 11 }} type="button" onClick={() => setOpen(false)}>
+      Hide
+    </button>
+    <div style={{ flexBasis: '100%', width: '100%', marginTop: 14 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
       <b style={{ fontSize: 10 }}>{businessName}</b>
       <div style={{ display: 'flex', gap: 4 }}>
@@ -55,7 +61,6 @@ export function DemoPreview({ slug, businessName }: { slug: string; businessName
         </button>)}
       </div>
       <a className="secondary" href={`/demo/${slug}`} target="_blank" rel="noreferrer" style={{ marginLeft: 'auto' }}>Open full page ↗</a>
-      <button className={styles.ghost} style={{ height: 28, fontSize: 8 }} type="button" onClick={() => setOpen(false)}>Close</button>
     </div>
     <div style={{ background: '#f1f1ee', border: '1px solid #e7e7e2', borderRadius: 10, padding: 12, display: 'grid', justifyItems: 'center' }}>
       <iframe
@@ -65,5 +70,6 @@ export function DemoPreview({ slug, businessName }: { slug: string; businessName
         style={{ width: active.width, maxWidth: '100%', height: 620, border: '1px solid #e2e2dc', borderRadius: 8, background: '#fff' }}
       />
     </div>
-  </div>
+    </div>
+  </>
 }

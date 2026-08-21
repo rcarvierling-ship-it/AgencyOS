@@ -54,7 +54,7 @@ export default async function Demos() {
 
     <Card eyebrow="Review queue" title="Concepts">
       {demos.length ? <div className="list">{demos.map((d: any) => <div className="listItem" key={d.id}
-        style={['ready', 'approved'].includes(d.status) ? { flexWrap: 'wrap' } : undefined}>
+        style={{ flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0 }}>
           <b>{d.name}</b>
           <span>
@@ -72,9 +72,9 @@ export default async function Demos() {
           <Pill tone={TONE[d.status as keyof typeof TONE] ?? 'neutral'}>{d.status}</Pill>
           <Link className="secondary" href={`/admin/businesses/${d.businessSlug}`}>Business</Link>
           {canWrite && d.buildId && ['failed', 'claimed', 'building'].includes(d.buildStatus) && <RequeueBuild buildId={d.buildId} />}
+          {['ready', 'approved'].includes(d.status) && <DemoPreviewTrigger slug={d.slug} businessName={d.name} />}
           {canReview && ['ready', 'approved', 'rejected'].includes(d.status) && <DemoReview demoId={d.id} status={d.status} />}
         </div>
-        {['ready', 'approved'].includes(d.status) && <DemoPreviewTrigger slug={d.slug} businessName={d.name} />}
       </div>)}</div> : <EmptyState title="No concepts yet" body="Build one from a business profile. It is composed from that business's own record and audit, so fill those in first." href="/admin/businesses" label="Open businesses" />}
     </Card>
   </AdminShell>
