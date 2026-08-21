@@ -44,15 +44,19 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
         .filter((c: any) => c.status === 'fail')
         .map((c: any) => ({ label: c.label, detail: c.detail }))
 
-      // Archetypes in use anywhere, so concepts differ across the whole book.
-      const priorRows = await tx<any[]>`select variation->>'archetype' as a from demo_builds where variation->>'archetype' is not null order by created_at desc limit 20`
-      const used = [...new Set(priorRows.map(r => r.a).filter(Boolean))] as string[]
+      // Recent variations across the whole book, so nothing repeats on any axis.
+      const priorRows = await tx<any[]>`
+        select variation->>'archetype' as archetype, variation->>'palette' as palette,
+               variation->>'typePairing' as "typePairing", variation->>'mode' as mode
+        from demo_builds where variation->>'archetype' is not null
+        order by created_at desc limit 12`
+      const used = priorRows.map(r => ({
+        archetype: r.archetype ?? '', palette: r.palette ?? '', typePairing: r.typePairing ?? '', mode: r.mode ?? '',
+      }))
 
       const slug = demoSlug(business.name, Math.random().toString(36).slice(2, 8))
       const variation = chooseVariation(used, business.id + slug)
-      const brief = buildBrief({
-        business, research, auditFailures, usedArchetypes: used, demoSlug: slug,
-      }, variation)
+      const brief = buildBrief({ business, research, auditFailures, used, demoSlug: slug }, variation)
 
       const [demo] = await tx<any[]>`
         insert into demos (business_id,slug,status,preview_url,metadata)
