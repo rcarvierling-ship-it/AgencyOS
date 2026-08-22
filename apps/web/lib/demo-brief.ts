@@ -208,7 +208,12 @@ ${bullet(ctx.auditFailures.map(f => `**${f.label}** — ${f.detail}`))}`)
   as known. If you want a trust element and have none, state something true: the service
   area, the services, how to reach them.
 ${hasSite && r?.images.length
-    ? `- Use their real photographs, listed above, at full bleed where the composition wants an image.`
+    ? `- Use their real photographs, listed above, at full bleed where the composition wants an image.
+- **Use those image URLs exactly as written. Do not alter, widen, or re-parameterise them.**
+  They were fetched and confirmed to load before being given to you. Many sites serve
+  images through an optimiser that only permits specific widths, so changing a width
+  parameter to get a larger image produces a 400 and an empty box on the page. If an
+  image is not large enough for the composition you want, change the composition.`
     : `- **There is no photography for this business, so design a page that does not need any.**
   This is the single most important instruction here. Do NOT lay out a photo-led design and
   leave grey rectangles in the holes — a large empty placeholder block reads as broken, not

@@ -13,6 +13,19 @@ export type BuildHealth = {
 const MAX_CHECKED = 14
 const PER_IMAGE_MS = 6000
 
+/**
+ * `&amp;` inside a src attribute is correct HTML — the browser decodes it back
+ * to `&`. Checking the raw attribute instead of the decoded URL reported
+ * working images as broken, which is worse than not checking at all: it makes
+ * the inspector something you learn to ignore.
+ */
+function decodeEntities(url: string) {
+  return url
+    .replace(/&amp;/gi, '&').replace(/&#0?38;/g, '&')
+    .replace(/&quot;/gi, '"').replace(/&#0?39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+}
+
 async function loads(url: string) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), PER_IMAGE_MS)
@@ -28,7 +41,7 @@ async function loads(url: string) {
 
 export async function inspectBuild(html: string): Promise<BuildHealth> {
   const warnings: string[] = []
-  const srcs = [...new Set([...html.matchAll(/<img[^>]+src=["'](https?:[^"']+)["']/gi)].map(m => m[1]!))]
+  const srcs = [...new Set([...html.matchAll(/<img[^>]+src=["'](https?:[^"']+)["']/gi)].map(m => decodeEntities(m[1]!)))]
   const checked = srcs.slice(0, MAX_CHECKED)
   const results = await Promise.all(checked.map(async url => ({ url, ok: await loads(url) })))
   const broken = results.filter(r => !r.ok).map(r => r.url)
